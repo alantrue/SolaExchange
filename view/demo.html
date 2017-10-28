@@ -5,110 +5,72 @@
     <title>Demo</title>
     <script type="text/javascript" src="js/jquery.js"></script>
     <script type="text/javascript" src="js/sprintf.js"></script>
-    <script type="text/javascript" src="js/web3.js"></script>
+    <script type="text/javascript" src="js/web3.min.js"></script>
     <script type="text/javascript" src="data/SLS_ABI.js"></script>
     <script type="text/javascript" src="data/ETHERDELTA_ABI.js"></script>
     <script type="text/javascript">
-    window.onload = function() {
-        if (typeof web3 !== 'undefined') {
-            web3 = new Web3(web3.currentProvider);
-        } else {
-            // set the provider you want from Web3.providers
-            web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
-        }
-        setInterval(function() {
-            $("#account").text(sprintf("Account: %s", web3.eth.accounts[0]));
-
-            web3.eth.getBalance(web3.eth.accounts[0], 'latest', function(err, result) {
-                if (err) {
-                    alert(err);
-                } else {
-                    $("#ethInWallet").text(sprintf("ETH in wallet: %s", result));
-                }
-            })
-
-            var sls = web3.eth.contract(sls_abi).at(sls_address);
-
-            sls.balanceOf(web3.eth.accounts[0], function(err, result) {
-                if (err) {
-                    alert(err);
-                } else {
-                    $("#slsInWallet").text(sprintf("SLS in wallet: %s", result));
-                }
-            });
-
-            var etherDelta = web3.eth.contract(etherdelta_abi).at(etherdelta_address);
-
-            etherDelta.tokens(0, web3.eth.accounts[0], function(err, result) {
-                if (err) {
-                    alert(err);
-                } else {
-                    $("#ethTokenInEtherDelta").text(sprintf("ETH Token in EtherDelta: %s", result));
-                }
-            });
-
-            etherDelta.tokens(sls_address, web3.eth.accounts[0], function(err, result) {
-                if (err) {
-                    alert(err);
-                } else {
-                    $("#slsTokenInEtherDelta").text(sprintf("SLS Token in EtherDelta: %s", result));
-                }
-            });
-
-        }, 1000);
+    if (typeof web3 !== 'undefined') {
+        web3 = new Web3(web3.currentProvider);
+    } else {
+        // set the provider you want from Web3.providers
+        web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
     }
 
-    function btn_deposit() {
-        var etherDelta = web3.eth.contract(etherdelta_abi).at(etherdelta_address);
-        etherDelta.deposit({ value: web3.toWei(1, 'ether') }, function(err, result) {
-            console.log("deposit", result);
-            if (err) {
-                alert(err);
-            }
+    var eth_address = '0x0000000000000000000000000000000000000000';
+    var account;
+    var sls = new web3.eth.Contract(sls_abi, sls_address);
+    var etherDelta = new web3.eth.Contract(etherdelta_abi, etherdelta_address);
+
+    web3.eth.getAccounts().then(function(r) {
+        account = r[0];
+        $("#account").text(sprintf("Account: %s", account));
+    });
+
+    setInterval(function() {
+        web3.eth.getBalance(account).then(function(r) {
+            $("#ethInWallet").text(sprintf("ETH in wallet: %s", r));
+        })
+
+        sls.methods.balanceOf(account).call().then(function(r) {
+            $("#slsInWallet").text(sprintf("SLS in wallet: %s", r));
         });
+
+        etherDelta.methods.balanceOf(eth_address, account).call().then(function(r) {
+            $("#ethTokenInEtherDelta").text(sprintf("ETH Token in EtherDelta: %s", r));
+        });
+
+        etherDelta.methods.balanceOf(sls_address, account).call().then(function(r) {
+            $("#slsTokenInEtherDelta").text(sprintf("SLS Token in EtherDelta: %s", r));
+        });
+    }, 1000);
+
+    function btn_deposit() {
+        etherDelta.methods.deposit().send({ from: account, value: web3.utils.toWei(1, 'ether') })
+            .then(console.log);
     }
 
     function btn_withdraw() {
-        var etherDelta = web3.eth.contract(etherdelta_abi).at(etherdelta_address);
-        etherDelta.withdraw(web3.toWei(1, 'ether'), function(err, result) {
-            console.log("withdraw", result);
-            if (err) {
-                alert(err);
-            }
-        });
+        etherDelta.methods.withdraw(web3.utils.toWei(1, 'ether')).send({ from: account })
+            .then(console.log);
     }
 
     function btn_approve() {
-        var sls = web3.eth.contract(sls_abi).at(sls_address);
-        sls.approve(etherdelta_address, 100000000, function(err, result) {
-            if (err) {
-                alert(err);
-            } else {
-                console.log("approveToken", result);
-            }
-        });
+        sls.methods.approve(etherdelta_address, slsToWei(1)).send({ from: account })
+            .then(console.log);
     }
 
     function btn_depositToken() {
-        var etherDelta = web3.eth.contract(etherdelta_abi).at(etherdelta_address);
-        etherDelta.depositToken(sls_address, 100000000, function(err, result) {
-            if (err) {
-                alert(err);
-            } else {
-                console.log("depositToken", result);
-            }
-        });
+        etherDelta.methods.depositToken(sls_address, slsToWei(1)).send({ from: account })
+            .then(console.log);
     }
 
     function btn_withdrawToken() {
-        var etherDelta = web3.eth.contract(etherdelta_abi).at(etherdelta_address);
-        etherDelta.withdrawToken(sls_address, 100000000, function(err, result) {
-            if (err) {
-                alert(err);
-            } else {
-                console.log("withdrawToken", result);
-            }
-        });
+        etherDelta.methods.withdrawToken(sls_address, slsToWei(1)).send({ from: account })
+            .then(console.log);
+    }
+
+    function slsToWei(v) {
+        return v * 100000000;
     }
     </script>
 </head>
