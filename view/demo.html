@@ -7,7 +7,7 @@
     <script type="text/javascript" src="js/sprintf.js"></script>
     <script type="text/javascript" src="js/web3.min.js"></script>
     <script type="text/javascript" src="data/SLS_ABI.js"></script>
-    <script type="text/javascript" src="data/ETHERDELTA_ABI.js"></script>
+    <script type="text/javascript" src="data/SOLAEXCHANGE_ABI.js"></script>
     <script type="text/javascript">
     if (typeof web3 !== 'undefined') {
         web3 = new Web3(web3.currentProvider);
@@ -19,58 +19,147 @@
     var eth_address = '0x0000000000000000000000000000000000000000';
     var account;
     var sls = new web3.eth.Contract(sls_abi, sls_address);
-    var etherDelta = new web3.eth.Contract(etherdelta_abi, etherdelta_address);
+    var solaExchange = new web3.eth.Contract(solaExchange_abi, solaExchange_address);
+    var eventList = new Object;
 
-    web3.eth.getAccounts().then(function(r) {
-        account = r[0];
-        $("#account").text(sprintf("Account: %s", account));
+    $(function() {
+        $("#orderBook").on('click', "tr", function() {
+            var logId = $(this).data("logid");
+            if (logId) {
+                var e = eventList[logId];
+                var o = e.returnValues;
+
+                var r = e.signature.slice(0, 34);
+                var s = '0x' + e.signature.slice(34, 66);
+                var v = '0x' + e.signature.slice(66, 68);
+                v = web3.utils.toDecimal(v) + 27;
+
+                solaExchange.methods.trade(o.tokenGet, o.amountGet, o.tokenGive, o.amountGive, o.expires, o.nonce, o.user, v, r, s, o.amountGet).send({ from: account })
+                    .then(function(r) {
+                        console.log(r);
+                    });
+            }
+        });
+
+        solaExchange.methods.tokenAllowed(sls_address).call()
+            .then(function(r) {
+                console.log("allow:", r);
+            });
+
+        solaExchange.getPastEvents('Order', {
+                //filter: { myIndexedParam: [20, 23], myOtherIndexedParam: '0x123456789...' }, // Using an array means OR: e.g. 20 or 23
+                fromBlock: 0,
+                toBlock: 'latest'
+            })
+            .then(function(events) {
+                for (var i = 0; i < events.length; ++i) {
+                    var event = events[i];
+                    (function(e) {
+                        var rv = e.returnValues;
+                        solaExchange.methods.amountFilled(rv.tokenGet, rv.amountGet, rv.tokenGive, rv.amountGive, rv.expires, rv.nonce, rv.user, 0, "0x0", "0x0").call()
+                            .then(function(filled) {
+                                console.log(e);
+                                var order, rate, sls, eth, remained;
+                                if (sls_address == rv.tokenGet) {
+                                    order = "BUY";
+                                    sls = weiToSls(rv.amountGet);
+                                    eth = web3.utils.fromWei(rv.amountGive, 'ether');
+                                    rate = eth / sls;
+                                    color = "lightgreen";
+
+                                    filled = weiToSls(filled);
+                                    remained = sls - filled;
+                                } else {
+                                    order = "SELL";
+                                    sls = weiToSls(rv.amountGive);
+                                    eth = web3.utils.fromWei(rv.amountGet, 'ether');
+                                    rate = eth / sls;
+                                    color = "red";
+
+                                    filled = web3.utils.fromWei(filled);
+                                    remained = (eth - filled) * sls / eth;
+                                }
+                                $("#orderBook tr:last").after(sprintf("<tr style='background: %s' data-logid=%s><td>%s</td><td>%s</td><td>[%s/%s]</td><td>%s</td><td>%s</td></>", color, e.id, order, rate, remained, sls, eth, rv.user));
+                                eventList[e.id] = event;
+                            });
+                    })(event);
+                }
+            });
+
+        web3.eth.getAccounts().then(function(r) {
+            account = r[0];
+            $("#account").text(sprintf("Account: %s", account));
+        });
+
+        setInterval(function() {
+            web3.eth.getBalance(account).then(function(r) {
+                $("#ethInWallet").text(sprintf("ETH in wallet: %s", web3.utils.fromWei(r, 'ether')));
+            })
+
+            sls.methods.balanceOf(account).call().then(function(r) {
+                $("#slsInWallet").text(sprintf("SLS in wallet: %s", weiToSls(r)));
+            });
+
+            solaExchange.methods.balanceOf(eth_address, account).call().then(function(r) {
+                $("#ethTokenInSolaExchange").text(sprintf("ETH Token in SolaExchange: %s", web3.utils.fromWei(r, 'ether')));
+            });
+
+            solaExchange.methods.balanceOf(sls_address, account).call().then(function(r) {
+                $("#slsTokenInSolaExchange").text(sprintf("SLS Token in SolaExchange: %s", weiToSls(r)));
+            });
+        }, 1000);
     });
 
-    setInterval(function() {
-        web3.eth.getBalance(account).then(function(r) {
-            $("#ethInWallet").text(sprintf("ETH in wallet: %s", r));
-        })
-
-        sls.methods.balanceOf(account).call().then(function(r) {
-            $("#slsInWallet").text(sprintf("SLS in wallet: %s", r));
-        });
-
-        etherDelta.methods.balanceOf(eth_address, account).call().then(function(r) {
-            $("#ethTokenInEtherDelta").text(sprintf("ETH Token in EtherDelta: %s", r));
-        });
-
-        etherDelta.methods.balanceOf(sls_address, account).call().then(function(r) {
-            $("#slsTokenInEtherDelta").text(sprintf("SLS Token in EtherDelta: %s", r));
-        });
-    }, 1000);
-
     function btn_deposit() {
-        etherDelta.methods.deposit().send({ from: account, value: web3.utils.toWei(1, 'ether') })
+        var v = $("#ethToken").val();
+        solaExchange.methods.deposit().send({ from: account, value: web3.utils.toWei(v, 'ether') })
             .then(console.log);
     }
 
     function btn_withdraw() {
-        etherDelta.methods.withdraw(web3.utils.toWei(1, 'ether')).send({ from: account })
-            .then(console.log);
-    }
-
-    function btn_approve() {
-        sls.methods.approve(etherdelta_address, slsToWei(1)).send({ from: account })
-            .then(console.log);
-    }
-
-    function btn_depositToken() {
-        etherDelta.methods.depositToken(sls_address, slsToWei(1)).send({ from: account })
-            .then(console.log);
-    }
-
-    function btn_withdrawToken() {
-        etherDelta.methods.withdrawToken(sls_address, slsToWei(1)).send({ from: account })
+        var v = $("#ethToken").val();
+        solaExchange.methods.withdraw(web3.utils.toWei(v, 'ether')).send({ from: account })
             .then(console.log);
     }
 
     function slsToWei(v) {
         return v * 100000000;
+    }
+
+    function weiToSls(v) {
+        return v / 100000000;
+    }
+
+    function btn_approve() {
+        var v = $("#slsToken").val();
+        sls.methods.approve(solaExchange_address, slsToWei(v)).send({ from: account })
+            .then(console.log);
+    }
+
+    function btn_depositToken() {
+        var v = $("#slsToken").val();
+        solaExchange.methods.depositToken(sls_address, slsToWei(v)).send({ from: account })
+            .then(console.log);
+    }
+
+    function btn_withdrawToken() {
+        var v = $("#slsToken").val();
+        solaExchange.methods.withdrawToken(sls_address, slsToWei(v)).send({ from: account })
+            .then(console.log);
+    }
+
+    function btn_orderBuySls() {
+        var v = $("#orderToken").val();
+        var nonce = Date.now();
+        solaExchange.methods.order(sls_address, slsToWei(v), eth_address, web3.utils.toWei(1, 'ether'), 10000000, nonce).send({ from: account })
+            .then(console.log);
+    }
+
+    function btn_orderSellSls() {
+        var v = $("#orderToken").val();
+        var nonce = Date.now();
+        solaExchange.methods.order(eth_address, web3.utils.toWei(1, 'ether'), sls_address, slsToWei(v), 10000000, nonce).send({ from: account })
+            .then(console.log);
     }
     </script>
 </head>
@@ -81,15 +170,30 @@
     <div id="ethInWallet"></div>
     <div id="slsInWallet"></div>
     <br/>
-    <div id="ethTokenInEtherDelta"></div>
-    <div id="slsTokenInEtherDelta"></div>
+    <div id="ethTokenInSolaExchange"></div>
+    <div id="slsTokenInSolaExchange"></div>
     <hr/>
-    <button type="button" onclick="btn_deposit()">deposit 1ETH</button>
-    <button type="button" onclick="btn_withdraw()">withdraw 1ETH</button>
+    <input id=ethToken type="number" value=0></input>
+    <button type="button" onclick="btn_deposit()">deposit ETH</button>
+    <button type="button" onclick="btn_withdraw()">withdraw ETH</button>
     <hr/>
-    <button type="button" onclick="btn_approve()">approve 1SLS</button>
-    <button type="button" onclick="btn_depositToken()">depositToken 1SLS</button>
-    <button type="button" onclick="btn_withdrawToken()">withdrawToken 1SLS</button>
+    <input id=slsToken type="number" value=0></input>
+    <button type="button" onclick="btn_approve()">approve SLS</button>
+    <button type="button" onclick="btn_depositToken()">depositToken SLS</button>
+    <button type="button" onclick="btn_withdrawToken()">withdrawToken SLS</button>
+    <hr/>
+    <input id="orderToken" type="number" value=0></input>
+    <button type="button" onclick="btn_orderBuySls()">order (buy SLS by 1ETH</button>
+    <button type="button" onclick="btn_orderSellSls()">order (sell SLS by 1ETH</button>
+    <table id="orderBook">
+        <tr>
+            <th>Order</th>
+            <th>SLS/ETH</th>
+            <th>SLS</th>
+            <th>ETH</th>
+            <th>USER</th>
+        </tr>
+    </table>
 </body>
 
 </html>
