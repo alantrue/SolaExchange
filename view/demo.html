@@ -17,8 +17,10 @@
     }
 
     var eth_address = '0x0000000000000000000000000000000000000000';
+    var autoSwitchAccount = false; //如要測試多帳號, 可改成false
     var account;
-    var currentBlock = 0;
+    var currentBlock;
+    var dataInitialized = false;
     var sls = new web3.eth.Contract(sls_abi, sls_address);
     var solaExchange = new web3.eth.Contract(solaExchange_abi, solaExchange_address);
     var eventList = new Object;
@@ -40,7 +42,6 @@
                         console.log(r);
                         refreshOrder();
                         refreshTrade();
-                        setTimeout(refreshCancel, 2000);
                     });
             }
         });
@@ -60,7 +61,6 @@
                     .then(function(r) {
                         console.log(r);
                         refreshOrder();
-                        setTimeout(refreshCancel, 2000);
                     });
             }
         });
@@ -71,61 +71,44 @@
         });
 
         setInterval(function() {
-            web3.eth.getBlockNumber().then(function(r) {
-                currentBlock = r;
-                $("#currentBlock").text(sprintf("CurrentBlock: %s", currentBlock));
-                $("#orderBook tr").each(function() {
-                    var logId = $(this).data("logid");
-                    if (logId) {
-                        var e = eventList[logId];
-                        var rv = e.returnValues;
-                        var expires = (rv.expires > currentBlock) ? rv.expires - currentBlock : 0;
+            if (autoSwitchAccount) {
+                web3.eth.getAccounts().then(function(r) {
+                    account = r[0];
+                    $("#account").text(sprintf("Account: %s", account));
+                });
+            }
 
-                        $(this).find('td:last-child').text(expires);
-                        if (expires == 0) {
-                            $(this).hide();
-                        }
+            if (account) {
+                web3.eth.getBlockNumber().then(function(r) {
+                    currentBlock = r;
+                    $("#currentBlock").text(sprintf("CurrentBlock: %s", currentBlock));
+
+                    if (!dataInitialized) {
+                        dataInitialized = true;
+                        refreshOrder();
+                        refreshTrade();
+                    } else {
+                        refreshExpires();
                     }
                 });
 
-                $("#myOrders tr").each(function() {
-                    var logId = $(this).data("logid");
-                    if (logId) {
-                        var e = eventList[logId];
-                        var rv = e.returnValues;
-                        var expires = (rv.expires > currentBlock) ? rv.expires - currentBlock : 0;
-
-                        $(this).find('td:nth-last-child(2)').text(expires);
-                        if (expires == 0) {
-                            $(this).find('td:last-child').text("expired");
-                            $(this).css("background", "dimgray");
-                        }
-                    }
+                web3.eth.getBalance(account).then(function(r) {
+                    $("#ethInWallet").text(sprintf("ETH in wallet: %s", web3.utils.fromWei(r, 'ether')));
                 });
-            });
 
-            web3.eth.getBalance(account).then(function(r) {
-                $("#ethInWallet").text(sprintf("ETH in wallet: %s", web3.utils.fromWei(r, 'ether')));
-            });
+                sls.methods.balanceOf(account).call().then(function(r) {
+                    $("#slsInWallet").text(sprintf("SLS in wallet: %s", weiToSls(r)));
+                });
 
-            sls.methods.balanceOf(account).call().then(function(r) {
-                $("#slsInWallet").text(sprintf("SLS in wallet: %s", weiToSls(r)));
-            });
+                solaExchange.methods.balanceOf(eth_address, account).call().then(function(r) {
+                    $("#ethTokenInSolaExchange").text(sprintf("ETH Token in SolaExchange: %s", web3.utils.fromWei(r, 'ether')));
+                });
 
-            solaExchange.methods.balanceOf(eth_address, account).call().then(function(r) {
-                $("#ethTokenInSolaExchange").text(sprintf("ETH Token in SolaExchange: %s", web3.utils.fromWei(r, 'ether')));
-            });
-
-            solaExchange.methods.balanceOf(sls_address, account).call().then(function(r) {
-                $("#slsTokenInSolaExchange").text(sprintf("SLS Token in SolaExchange: %s", weiToSls(r)));
-            });
+                solaExchange.methods.balanceOf(sls_address, account).call().then(function(r) {
+                    $("#slsTokenInSolaExchange").text(sprintf("SLS Token in SolaExchange: %s", weiToSls(r)));
+                });
+            }
         }, 1000);
-
-        refreshOrder();
-        refreshTrade();
-
-        //暫時用延後查詢解決, 應該改成全部查詢集成後, 才統一顯示
-        setTimeout(refreshCancel, 2000);
     });
 
     function btn_deposit() {
@@ -225,15 +208,19 @@
                                     remained = (eth - filled) * sls / eth;
                                 }
 
-                                var expires = (rv.expires > currentBlock) ? rv.expires - currentBlock : 0;
+                                if (remained > 0) {
+                                    var expires = (rv.expires > currentBlock) ? rv.expires - currentBlock : 0;
 
-                                $("#orderBook tr:last").after(sprintf("<tr id='o_%s' style='background: %s' data-logid='%s'><td>%s</td><td>%s</td><td>[%s/%s]</td><td>%s</td><td>%s</td></tr>", rv.nonce, color, e.id, order, rate, remained, sls, eth, expires));
+                                    if (expires > 0) {
+                                        $("#orderBook tr:last").after(sprintf("<tr id='o_%s' style='background: %s' data-logid='%s'><td>%s</td><td>%s</td><td>[%s/%s]</td><td>%s</td><td>%s</td></tr>", rv.nonce, color, e.id, order, rate, remained, sls, eth, expires));
+                                    }
 
-                                if (rv.user == account) {
-                                    $("#myOrders tr:last").after(sprintf("<tr id='mo_%s' style='background: %s' data-logid='%s'><td>%s</td><td>%s</td><td>[%s/%s]</td><td>%s</td><td>%s</td><td>%s</td></tr>", rv.nonce, (expires > 0 ? 'lightgrey' : 'dimgray'), e.id, order, rate, remained, sls, eth, expires, (expires > 0 ? 'alive' : 'expired')));
+                                    if (rv.user == account) {
+                                        $("#myOrders tr:last").after(sprintf("<tr id='mo_%s' style='background: %s' data-logid='%s'><td>%s</td><td>%s</td><td>[%s/%s]</td><td>%s</td><td>%s</td><td>%s</td></tr>", rv.nonce, (expires > 0 ? 'lightgrey' : 'dimgray'), e.id, order, rate, remained, sls, eth, expires, (expires > 0 ? 'alive' : 'expired')));
+                                    }
+
+                                    eventList[e.id] = e;
                                 }
-
-                                eventList[e.id] = e;
                             });
                     })(events[i]);
                 }
@@ -271,27 +258,42 @@
             });
     }
 
-    function refreshCancel() {
-        solaExchange.getPastEvents('Cancel', {
-                //filter: { myIndexedParam: [20, 23], myOtherIndexedParam: '0x123456789...' }, // Using an array means OR: e.g. 20 or 23
-                fromBlock: 0,
-                toBlock: 'latest'
-            })
-            .then(function(cancels) {
-                for (var i = 0; i < cancels.length; i++) {
-                    var rv = cancels[i].returnValues;
-                    $("#mo_" + rv.nonce).find('td:last').text('canceled');
-                    $("#mo_" + rv.nonce).css("background", "dimgray");
-                    $("#o_" + rv.nonce).hide();
+    function refreshExpires() {
+        $("#orderBook tr").each(function() {
+            var logId = $(this).data("logid");
+            if (logId) {
+                var e = eventList[logId];
+                var rv = e.returnValues;
+                var expires = (rv.expires > currentBlock) ? rv.expires - currentBlock : 0;
+
+                $(this).find('td:last-child').text(expires);
+                if (expires == 0) {
+                    $(this).hide();
                 }
-            });
+            }
+        });
+
+        $("#myOrders tr").each(function() {
+            var logId = $(this).data("logid");
+            if (logId) {
+                var e = eventList[logId];
+                var rv = e.returnValues;
+                var expires = (rv.expires > currentBlock) ? rv.expires - currentBlock : 0;
+
+                $(this).find('td:nth-last-child(2)').text(expires);
+                if (expires == 0) {
+                    $(this).find('td:last-child').text("expired");
+                    $(this).css("background", "dimgray");
+                }
+            }
+        });
     }
     </script>
 </head>
 
 <body>
-    <div id="currentBlock"></div>
     <div id="account"></div>
+    <div id="currentBlock"></div>
     <br/>
     <div id="ethInWallet"></div>
     <div id="slsInWallet"></div>
