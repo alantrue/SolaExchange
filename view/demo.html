@@ -38,6 +38,9 @@
                 solaExchange.methods.trade(rv.tokenGet, rv.amountGet, rv.tokenGive, rv.amountGive, rv.expires, rv.nonce, rv.user, v, r, s, rv.amountGet).send({ from: account })
                     .then(function(r) {
                         console.log(r);
+                        refreshOrder();
+                        refreshTrade();
+                        setTimeout(refreshCancel, 2000);
                     });
             }
         });
@@ -56,6 +59,8 @@
                 solaExchange.methods.cancelOrder(rv.tokenGet, rv.amountGet, rv.tokenGive, rv.amountGive, rv.expires, rv.nonce, v, r, s).send({ from: account })
                     .then(function(r) {
                         console.log(r);
+                        refreshOrder();
+                        setTimeout(refreshCancel, 2000);
                     });
             }
         });
@@ -116,100 +121,11 @@
             });
         }, 1000);
 
-        solaExchange.methods.tokenAllowed(sls_address).call()
-            .then(function(r) {
-                console.log("allow:", r);
-            });
-
-        solaExchange.getPastEvents('Order', {
-                //filter: { myIndexedParam: [20, 23], myOtherIndexedParam: '0x123456789...' }, // Using an array means OR: e.g. 20 or 23
-                fromBlock: 0,
-                toBlock: 'latest'
-            })
-            .then(function(events) {
-                console.log("OrderCount:", events.length);
-                for (var i = 0; i < events.length; ++i) {
-                    (function(e) {
-                        var rv = e.returnValues;
-                        solaExchange.methods.amountFilled(rv.tokenGet, rv.amountGet, rv.tokenGive, rv.amountGive, rv.expires, rv.nonce, rv.user, 0, "0x0", "0x0").call()
-                            .then(function(filled) {
-                                //console.log(e);
-                                var order, rate, sls, eth, remained;
-                                if (sls_address == rv.tokenGet) {
-                                    order = "BUY";
-                                    sls = weiToSls(rv.amountGet);
-                                    eth = web3.utils.fromWei(rv.amountGive, 'ether');
-                                    rate = eth / sls;
-                                    color = "lightgreen";
-                                    filled = weiToSls(filled);
-                                    remained = sls - filled;
-                                } else {
-                                    order = "SELL";
-                                    sls = weiToSls(rv.amountGive);
-                                    eth = web3.utils.fromWei(rv.amountGet, 'ether');
-                                    rate = eth / sls;
-                                    color = "red";
-                                    filled = web3.utils.fromWei(filled);
-                                    remained = (eth - filled) * sls / eth;
-                                }
-
-                                var expires = (rv.expires > currentBlock) ? rv.expires - currentBlock : 0;
-
-                                $("#orderBook tr:last").after(sprintf("<tr id='o_%s' style='background: %s' data-logid='%s'><td>%s</td><td>%s</td><td>[%s/%s]</td><td>%s</td><td>%s</td></tr>", rv.nonce, color, e.id, order, rate, remained, sls, eth, expires));
-
-                                if (rv.user == account) {
-                                    $("#myOrders tr:last").after(sprintf("<tr id='mo_%s' style='background: %s' data-logid='%s'><td>%s</td><td>%s</td><td>[%s/%s]</td><td>%s</td><td>%s</td><td>%s</td></tr>", rv.nonce, (expires > 0 ? 'lightgrey' : 'dimgray'), e.id, order, rate, remained, sls, eth, expires, (expires > 0 ? 'alive' : 'expired')));
-                                }
-
-                                eventList[e.id] = e;
-                            });
-                    })(events[i]);
-                }
-            });
-
-        solaExchange.getPastEvents('Trade', {
-                //filter: { myIndexedParam: [20, 23], myOtherIndexedParam: '0x123456789...' }, // Using an array means OR: e.g. 20 or 23
-                fromBlock: 0,
-                toBlock: 'latest'
-            })
-            .then(function(trades) {
-                for (var i = 0; i < trades.length; i++) {
-                    var rv = trades[i].returnValues;
-                    if (rv.get == account || rv.give == account) {
-                        var order, rate, sls, eth;
-                        if (sls_address == rv.tokenGet) {
-                            order = (rv.get == account) ? "BUY" : "SELL";
-                            sls = weiToSls(rv.amountGet);
-                            eth = web3.utils.fromWei(rv.amountGive, 'ether');
-                            rate = eth / sls;
-                        } else {
-                            order = (rv.give == account) ? "BUY" : "SELL";
-                            sls = weiToSls(rv.amountGive);
-                            eth = web3.utils.fromWei(rv.amountGet, 'ether');
-                            rate = eth / sls;
-                        }
-
-                        $("#myTrades tr:last").after(sprintf("<tr style='background: lightgrey'><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>", order, rate, sls, eth));
-                    }
-                }
-            });
+        refreshOrder();
+        refreshTrade();
 
         //暫時用延後查詢解決, 應該改成全部查詢集成後, 才統一顯示
-        setTimeout(function() {
-            solaExchange.getPastEvents('Cancel', {
-                    //filter: { myIndexedParam: [20, 23], myOtherIndexedParam: '0x123456789...' }, // Using an array means OR: e.g. 20 or 23
-                    fromBlock: 0,
-                    toBlock: 'latest'
-                })
-                .then(function(cancels) {
-                    for (var i = 0; i < cancels.length; i++) {
-                        var rv = cancels[i].returnValues;
-                        $("#mo_" + rv.nonce).find('td:last').text('canceled');
-                        $("#mo_" + rv.nonce).css("background", "dimgray");
-                        $("#o_" + rv.nonce).hide();
-                    }
-                });
-        }, 2000);
+        setTimeout(refreshCancel, 2000);
     });
 
     function btn_deposit() {
@@ -256,7 +172,10 @@
         var expires = parseInt($('#orderExpires').val()) + currentBlock;
         var nonce = Date.now();
         solaExchange.methods.order(sls_address, slsToWei(get), eth_address, web3.utils.toWei(give, 'ether'), expires, nonce).send({ from: account })
-            .then(console.log);
+            .then(function(r) {
+                console.log(r);
+                refreshOrder();
+            });
     }
 
     function btn_orderSellSls() {
@@ -265,7 +184,107 @@
         var expires = parseInt($('#orderExpires').val()) + currentBlock;
         var nonce = Date.now();
         solaExchange.methods.order(eth_address, web3.utils.toWei(get, 'ether'), sls_address, slsToWei(give), expires, nonce).send({ from: account })
-            .then(console.log);
+            .then(function(r) {
+                console.log(r);
+                refreshOrder();
+            });
+    }
+
+    function refreshOrder() {
+        solaExchange.getPastEvents('Order', {
+                //filter: { myIndexedParam: [20, 23], myOtherIndexedParam: '0x123456789...' }, // Using an array means OR: e.g. 20 or 23
+                fromBlock: 0,
+                toBlock: 'latest'
+            })
+            .then(function(events) {
+                $("#orderBook tr:gt(0)").remove();
+                $("#myOrders tr:gt(0)").remove();
+
+                for (var i = 0; i < events.length; ++i) {
+                    (function(e) {
+                        var rv = e.returnValues;
+                        solaExchange.methods.amountFilled(rv.tokenGet, rv.amountGet, rv.tokenGive, rv.amountGive, rv.expires, rv.nonce, rv.user, 0, "0x0", "0x0").call()
+                            .then(function(filled) {
+                                //console.log(e);
+                                var order, rate, sls, eth, remained;
+                                if (sls_address == rv.tokenGet) {
+                                    order = "BUY";
+                                    sls = weiToSls(rv.amountGet);
+                                    eth = web3.utils.fromWei(rv.amountGive, 'ether');
+                                    rate = eth / sls;
+                                    color = "lightgreen";
+                                    filled = weiToSls(filled);
+                                    remained = sls - filled;
+                                } else {
+                                    order = "SELL";
+                                    sls = weiToSls(rv.amountGive);
+                                    eth = web3.utils.fromWei(rv.amountGet, 'ether');
+                                    rate = eth / sls;
+                                    color = "red";
+                                    filled = web3.utils.fromWei(filled);
+                                    remained = (eth - filled) * sls / eth;
+                                }
+
+                                var expires = (rv.expires > currentBlock) ? rv.expires - currentBlock : 0;
+
+                                $("#orderBook tr:last").after(sprintf("<tr id='o_%s' style='background: %s' data-logid='%s'><td>%s</td><td>%s</td><td>[%s/%s]</td><td>%s</td><td>%s</td></tr>", rv.nonce, color, e.id, order, rate, remained, sls, eth, expires));
+
+                                if (rv.user == account) {
+                                    $("#myOrders tr:last").after(sprintf("<tr id='mo_%s' style='background: %s' data-logid='%s'><td>%s</td><td>%s</td><td>[%s/%s]</td><td>%s</td><td>%s</td><td>%s</td></tr>", rv.nonce, (expires > 0 ? 'lightgrey' : 'dimgray'), e.id, order, rate, remained, sls, eth, expires, (expires > 0 ? 'alive' : 'expired')));
+                                }
+
+                                eventList[e.id] = e;
+                            });
+                    })(events[i]);
+                }
+            });
+    }
+
+    function refreshTrade() {
+        solaExchange.getPastEvents('Trade', {
+                //filter: { myIndexedParam: [20, 23], myOtherIndexedParam: '0x123456789...' }, // Using an array means OR: e.g. 20 or 23
+                fromBlock: 0,
+                toBlock: 'latest'
+            })
+            .then(function(trades) {
+                $("#myTrades tr:gt(0)").remove();
+
+                for (var i = 0; i < trades.length; i++) {
+                    var rv = trades[i].returnValues;
+                    if (rv.get == account || rv.give == account) {
+                        var order, rate, sls, eth;
+                        if (sls_address == rv.tokenGet) {
+                            order = (rv.get == account) ? "BUY" : "SELL";
+                            sls = weiToSls(rv.amountGet);
+                            eth = web3.utils.fromWei(rv.amountGive, 'ether');
+                            rate = eth / sls;
+                        } else {
+                            order = (rv.give == account) ? "BUY" : "SELL";
+                            sls = weiToSls(rv.amountGive);
+                            eth = web3.utils.fromWei(rv.amountGet, 'ether');
+                            rate = eth / sls;
+                        }
+
+                        $("#myTrades tr:last").after(sprintf("<tr style='background: lightgrey'><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>", order, rate, sls, eth));
+                    }
+                }
+            });
+    }
+
+    function refreshCancel() {
+        solaExchange.getPastEvents('Cancel', {
+                //filter: { myIndexedParam: [20, 23], myOtherIndexedParam: '0x123456789...' }, // Using an array means OR: e.g. 20 or 23
+                fromBlock: 0,
+                toBlock: 'latest'
+            })
+            .then(function(cancels) {
+                for (var i = 0; i < cancels.length; i++) {
+                    var rv = cancels[i].returnValues;
+                    $("#mo_" + rv.nonce).find('td:last').text('canceled');
+                    $("#mo_" + rv.nonce).css("background", "dimgray");
+                    $("#o_" + rv.nonce).hide();
+                }
+            });
     }
     </script>
 </head>
