@@ -3,6 +3,7 @@
 
 <head>
     <title>Demo</title>
+    <link rel="stylesheet" type="text/css" href="css/main.css">
     <script type="text/javascript" src="js/jquery.js"></script>
     <script type="text/javascript" src="js/sprintf.js"></script>
     <script type="text/javascript" src="js/web3.min.js"></script>
@@ -25,24 +26,41 @@
     var solaExchange = new web3.eth.Contract(solaExchange_abi, solaExchange_address);
     var eventList = new Object;
 
+    function openTradeDialog(logId) {
+        var e = eventList[logId];
+        var rv = e.returnValues;
+
+        var type, sls, eth, rate;
+        if (sls_address == rv.tokenGet) {
+            type = "Sell";
+            sls = weiToSls(rv.amountGet);
+            eth = web3.utils.fromWei(rv.amountGive, 'ether');
+            rate = eth / sls;
+        } else {
+            order = "Buy";
+            sls = weiToSls(rv.amountGive);
+            eth = web3.utils.fromWei(rv.amountGet, 'ether');
+            rate = eth / sls;
+        }
+
+        $("#tradeDialogTradeType").text(type);
+        $("#tradeDialogDescription").html(sprintf("Order <br/> %s SLS @ %s SLS/ETH <br/> Expires in %s blocks", sls, rate, rv.expires));
+        $("#tradeDialogAmountLabel").text("SLS");
+        $("#tradeDialogAmount").val(sls);
+        $("#tradeDialogEth").val(eth);
+        $("#tradeDialogFee").val("?");
+
+        $("#tradeDialog").data("logId", logId);
+        $("#tradeDialog").data("rate", rate);
+
+        $("#tradeMask").show();
+    }
+
     $(function() {
         $("#orderBook").on('click', "tr", function() {
             var logId = $(this).data("logid");
             if (logId) {
-                var e = eventList[logId];
-                var rv = e.returnValues;
-
-                var r = e.signature.slice(0, 34);
-                var s = '0x' + e.signature.slice(34, 66);
-                var v = '0x' + e.signature.slice(66, 68);
-                v = web3.utils.toDecimal(v) + 27;
-
-                solaExchange.methods.trade(rv.tokenGet, rv.amountGet, rv.tokenGive, rv.amountGive, rv.expires, rv.nonce, rv.user, v, r, s, rv.amountGet).send({ from: account })
-                    .then(function(r) {
-                        console.log(r);
-                        refreshOrder();
-                        refreshTrade();
-                    });
+                openTradeDialog(logId);
             }
         });
 
@@ -63,6 +81,38 @@
                         refreshOrder();
                     });
             }
+        });
+
+        $("#tradeDialogConfirm").click(function() {
+            var logId = $("#tradeDialog").data("logId");
+            var e = eventList[logId];
+            var rv = e.returnValues;
+
+            var r = e.signature.slice(0, 34);
+            var s = '0x' + e.signature.slice(34, 66);
+            var v = '0x' + e.signature.slice(66, 68);
+            v = web3.utils.toDecimal(v) + 27;
+
+            var amountGet;
+            if (sls_address == rv.tokenGet) {
+                amountGet = slsToWei($("#tradeDialogAmount").val());
+            } else {
+                amountGet = web3.utils.toWei($("#tradeDialogEth").val(), 'ether');
+            }
+
+            solaExchange.methods.trade(rv.tokenGet, rv.amountGet, rv.tokenGive, rv.amountGive, rv.expires, rv.nonce, rv.user, v, r, s, amountGet).send({ from: account })
+                .then(function(r) {
+                    console.log(r);
+                    refreshOrder();
+                    refreshTrade();
+                });
+
+            $("#tradeMask").hide();
+        });
+
+        $("#tradeDialogAmount").bind('keyup mouseup', function() {
+            var eth = $("#tradeDialog").data("rate") * $("#tradeDialogAmount").val();
+            $("#tradeDialogEth").val(eth);
         });
 
         web3.eth.getAccounts().then(function(r) {
@@ -217,11 +267,11 @@
                                     var expires = (rv.expires > currentBlock) ? rv.expires - currentBlock : 0;
 
                                     if (expires > 0) {
-                                        $("#orderBook tr:last").after(sprintf("<tr id='o_%s' style='background: %s' data-logid='%s'><td>%s</td><td>%s</td><td>[%s/%s]</td><td>%s</td><td>%s</td></tr>", rv.nonce, color, e.id, order, rate, remained, sls, eth, expires));
+                                        $("#orderBook tr:last").after(sprintf("<tr id='o_%s' title='click to trade.' style='background: %s' data-logid='%s'><td>%s</td><td>%s</td><td>[%s/%s]</td><td>%s</td><td>%s</td></tr>", rv.nonce, color, e.id, order, rate, remained, sls, eth, expires));
                                     }
 
                                     if (rv.user == account) {
-                                        $("#myOrders tr:last").after(sprintf("<tr id='mo_%s' style='background: %s' data-logid='%s'><td>%s</td><td>%s</td><td>[%s/%s]</td><td>%s</td><td>%s</td><td>%s</td></tr>", rv.nonce, (expires > 0 ? 'lightgrey' : 'dimgray'), e.id, order, rate, remained, sls, eth, expires, (expires > 0 ? 'alive' : 'expired')));
+                                        $("#myOrders tr:last").after(sprintf("<tr id='mo_%s' title='click to cancel.' style='background: %s' data-logid='%s'><td>%s</td><td>%s</td><td>[%s/%s]</td><td>%s</td><td>%s</td><td>%s</td></tr>", rv.nonce, (expires > 0 ? 'lightgrey' : 'dimgray'), e.id, order, rate, remained, sls, eth, expires, (expires > 0 ? 'alive' : 'expired')));
                                     }
 
                                     eventList[e.id] = e;
@@ -361,6 +411,29 @@
                 </tr>
             </table>
         </span>
+    </div>
+    <div id="tradeMask" hidden="true">
+        <div id="tradeDialog">
+            <label id="tradeDialogTradeType"></label>
+            <hr/>
+            <div id="tradeDialogDescription"></div>
+            <br/>
+            <div id="tradeDialogAmountLabel"></div>
+            <input id="tradeDialogAmount" type="number"></input>
+            <br/>
+            <br/>
+            <div>ETH</div>
+            <input id="tradeDialogEth" type="number" disabled></input>
+            <br/>
+            <br/>
+            <div>Fee</div>
+            <input id="tradeDialogFee" type="number" disabled></input>
+            <br/>
+            <br/>
+            <hr/>
+            <button id="tradeDialogCancel" type="button" onclick="$('#tradeMask').hide();">cancel</button>
+            <button id="tradeDialogConfirm" type="button">trade</button>
+        </div>
     </div>
 </body>
 
