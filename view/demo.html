@@ -58,7 +58,7 @@
                         var rv = e.returnValues;
                         solaExchange.methods.amountFilled(rv.tokenGet, rv.amountGet, rv.tokenGive, rv.amountGive, rv.expires, rv.nonce, rv.user, 0, "0x0", "0x0").call()
                             .then(function(filled) {
-                                console.log(e);
+                                //console.log(e);
                                 var order, rate, sls, eth, remained;
                                 if (sls_address == rv.tokenGet) {
                                     order = "BUY";
@@ -79,10 +79,44 @@
                                     filled = web3.utils.fromWei(filled);
                                     remained = (eth - filled) * sls / eth;
                                 }
+
                                 $("#orderBook tr:last").after(sprintf("<tr style='background: %s' data-logid=%s><td>%s</td><td>%s</td><td>[%s/%s]</td><td>%s</td><td>%s</td></>", color, e.id, order, rate, remained, sls, eth, rv.user));
+
+                                if (rv.user == account) {
+                                    $("#myOrder tr:last").after(sprintf("<tr style='background: lightgrey'><td>%s</td><td>%s</td><td>[%s/%s]</td><td>%s</td>", order, rate, remained, sls, eth));
+                                }
+
                                 eventList[e.id] = event;
                             });
                     })(event);
+                }
+            });
+
+        solaExchange.getPastEvents('Trade', {
+                //filter: { myIndexedParam: [20, 23], myOtherIndexedParam: '0x123456789...' }, // Using an array means OR: e.g. 20 or 23
+                fromBlock: 0,
+                toBlock: 'latest'
+            })
+            .then(function(trades) {
+                //console.log(trades);
+                for (var i = 0; i < trades.length; i++) {
+                    var rv = trades[i].returnValues;
+                    if (rv.get == account || rv.give == account) {
+                        var order, rate, sls, eth;
+                        if (sls_address == rv.tokenGet) {
+                            order = (rv.get == account) ? "BUY" : "SELL";
+                            sls = weiToSls(rv.amountGet);
+                            eth = web3.utils.fromWei(rv.amountGive, 'ether');
+                            rate = eth / sls;
+                        } else {
+                            order = (rv.give == account) ? "BUY" : "SELL";
+                            sls = weiToSls(rv.amountGive);
+                            eth = web3.utils.fromWei(rv.amountGet, 'ether');
+                            rate = eth / sls;
+                        }
+
+                        $("#myTrade tr:last").after(sprintf("<tr style='background: lightgrey'><td>%s</td><td>%s</td><td>%s</td><td>%s</td>", order, rate, sls, eth));
+                    }
                 }
             });
 
@@ -190,15 +224,43 @@
     <input id="orderEthToken" type="number" value=0></input>
     <button type="button" onclick="btn_orderBuySls()">order (buy SLS by paying ETH)</button>
     <button type="button" onclick="btn_orderSellSls()">order (sell SLS for obtaining ETH)</button>
-    <table id="orderBook">
-        <tr>
-            <th>Order</th>
-            <th>SLS/ETH</th>
-            <th>SLS</th>
-            <th>ETH</th>
-            <th>USER</th>
-        </tr>
-    </table>
+    <hr/>
+    <div>
+        <span style="float: left">
+            <label>Order Book</label>
+            <table id="orderBook">
+                <tr>
+                    <th>Order</th>
+                    <th>SLS/ETH</th>
+                    <th>SLS</th>
+                    <th>ETH</th>
+                    <th>USER</th>
+                </tr>
+            </table>
+        </span>
+        <span style="float: left">
+            <label>My Orders</label>
+            <table id="myOrder">
+                <tr>
+                    <th>Order</th>
+                    <th>SLS/ETH</th>
+                    <th>SLS</th>
+                    <th>ETH</th>
+                </tr>
+            </table>
+        </span>
+        <span style="float: left">
+            <label>My Trades</label>
+            <table id="myTrade">
+                <tr>
+                    <th>Trade</th>
+                    <th>SLS/ETH</th>
+                    <th>SLS</th>
+                    <th>ETH</th>
+                </tr>
+            </table>
+        </span>
+    </div>
 </body>
 
 </html>
