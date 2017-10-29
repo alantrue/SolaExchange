@@ -149,16 +149,18 @@
     }
 
     function btn_orderBuySls() {
-        var v = $("#orderToken").val();
+        var get = $("#orderSlsToken").val();
+        var give = $("#orderEthToken").val();
         var nonce = Date.now();
-        solaExchange.methods.order(sls_address, slsToWei(v), eth_address, web3.utils.toWei(1, 'ether'), 10000000, nonce).send({ from: account })
+        solaExchange.methods.order(sls_address, slsToWei(get), eth_address, web3.utils.toWei(give, 'ether'), 10000000, nonce).send({ from: account })
             .then(console.log);
     }
 
     function btn_orderSellSls() {
-        var v = $("#orderToken").val();
+        var get = $("#orderEthToken").val();
+        var give = $("#orderSlsToken").val();
         var nonce = Date.now();
-        solaExchange.methods.order(eth_address, web3.utils.toWei(1, 'ether'), sls_address, slsToWei(v), 10000000, nonce).send({ from: account })
+        solaExchange.methods.order(eth_address, web3.utils.toWei(get, 'ether'), sls_address, slsToWei(give), 10000000, nonce).send({ from: account })
             .then(console.log);
     }
     </script>
@@ -182,9 +184,12 @@
     <button type="button" onclick="btn_depositToken()">depositToken SLS</button>
     <button type="button" onclick="btn_withdrawToken()">withdrawToken SLS</button>
     <hr/>
-    <input id="orderToken" type="number" value=0></input>
-    <button type="button" onclick="btn_orderBuySls()">order (buy SLS by 1ETH</button>
-    <button type="button" onclick="btn_orderSellSls()">order (sell SLS by 1ETH</button>
+    <label>SLS:</label>
+    <input id="orderSlsToken" type="number" value=0></input>
+    <label>ETH:</label>
+    <input id="orderEthToken" type="number" value=0></input>
+    <button type="button" onclick="btn_orderBuySls()">order (buy SLS by paying ETH)</button>
+    <button type="button" onclick="btn_orderSellSls()">order (sell SLS for obtaining ETH)</button>
     <table id="orderBook">
         <tr>
             <th>Order</th>
