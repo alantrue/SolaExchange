@@ -18,6 +18,7 @@
 
     var eth_address = '0x0000000000000000000000000000000000000000';
     var account;
+    var currentBlock = 0;
     var sls = new web3.eth.Contract(sls_abi, sls_address);
     var solaExchange = new web3.eth.Contract(solaExchange_abi, solaExchange_address);
     var eventList = new Object;
@@ -27,19 +28,93 @@
             var logId = $(this).data("logid");
             if (logId) {
                 var e = eventList[logId];
-                var o = e.returnValues;
+                var rv = e.returnValues;
 
                 var r = e.signature.slice(0, 34);
                 var s = '0x' + e.signature.slice(34, 66);
                 var v = '0x' + e.signature.slice(66, 68);
                 v = web3.utils.toDecimal(v) + 27;
 
-                solaExchange.methods.trade(o.tokenGet, o.amountGet, o.tokenGive, o.amountGive, o.expires, o.nonce, o.user, v, r, s, o.amountGet).send({ from: account })
+                solaExchange.methods.trade(rv.tokenGet, rv.amountGet, rv.tokenGive, rv.amountGive, rv.expires, rv.nonce, rv.user, v, r, s, rv.amountGet).send({ from: account })
                     .then(function(r) {
                         console.log(r);
                     });
             }
         });
+
+        $("#myOrders").on('click', "tr", function() {
+            var logId = $(this).data("logid");
+            if (logId) {
+                var e = eventList[logId];
+                var rv = e.returnValues;
+
+                var r = e.signature.slice(0, 34);
+                var s = '0x' + e.signature.slice(34, 66);
+                var v = '0x' + e.signature.slice(66, 68);
+                v = web3.utils.toDecimal(v) + 27;
+
+                solaExchange.methods.cancelOrder(rv.tokenGet, rv.amountGet, rv.tokenGive, rv.amountGive, rv.expires, rv.nonce, v, r, s).send({ from: account })
+                    .then(function(r) {
+                        console.log(r);
+                    });
+            }
+        });
+
+        web3.eth.getAccounts().then(function(r) {
+            account = r[0];
+            $("#account").text(sprintf("Account: %s", account));
+        });
+
+        setInterval(function() {
+            web3.eth.getBlockNumber().then(function(r) {
+                currentBlock = r;
+                $("#currentBlock").text(sprintf("CurrentBlock: %s", currentBlock));
+                $("#orderBook tr").each(function() {
+                    var logId = $(this).data("logid");
+                    if (logId) {
+                        var e = eventList[logId];
+                        var rv = e.returnValues;
+                        var expires = (rv.expires > currentBlock) ? rv.expires - currentBlock : 0;
+
+                        $(this).find('td:last-child').text(expires);
+                        if (expires == 0) {
+                            $(this).hide();
+                        }
+                    }
+                });
+
+                $("#myOrders tr").each(function() {
+                    var logId = $(this).data("logid");
+                    if (logId) {
+                        var e = eventList[logId];
+                        var rv = e.returnValues;
+                        var expires = (rv.expires > currentBlock) ? rv.expires - currentBlock : 0;
+
+                        $(this).find('td:nth-last-child(2)').text(expires);
+                        if (expires == 0) {
+                            $(this).find('td:last-child').text("expired");
+                            $(this).css("background", "dimgray");
+                        }
+                    }
+                });
+            });
+
+            web3.eth.getBalance(account).then(function(r) {
+                $("#ethInWallet").text(sprintf("ETH in wallet: %s", web3.utils.fromWei(r, 'ether')));
+            });
+
+            sls.methods.balanceOf(account).call().then(function(r) {
+                $("#slsInWallet").text(sprintf("SLS in wallet: %s", weiToSls(r)));
+            });
+
+            solaExchange.methods.balanceOf(eth_address, account).call().then(function(r) {
+                $("#ethTokenInSolaExchange").text(sprintf("ETH Token in SolaExchange: %s", web3.utils.fromWei(r, 'ether')));
+            });
+
+            solaExchange.methods.balanceOf(sls_address, account).call().then(function(r) {
+                $("#slsTokenInSolaExchange").text(sprintf("SLS Token in SolaExchange: %s", weiToSls(r)));
+            });
+        }, 1000);
 
         solaExchange.methods.tokenAllowed(sls_address).call()
             .then(function(r) {
@@ -52,8 +127,8 @@
                 toBlock: 'latest'
             })
             .then(function(events) {
+                console.log("OrderCount:", events.length);
                 for (var i = 0; i < events.length; ++i) {
-                    var event = events[i];
                     (function(e) {
                         var rv = e.returnValues;
                         solaExchange.methods.amountFilled(rv.tokenGet, rv.amountGet, rv.tokenGive, rv.amountGive, rv.expires, rv.nonce, rv.user, 0, "0x0", "0x0").call()
@@ -66,7 +141,6 @@
                                     eth = web3.utils.fromWei(rv.amountGive, 'ether');
                                     rate = eth / sls;
                                     color = "lightgreen";
-
                                     filled = weiToSls(filled);
                                     remained = sls - filled;
                                 } else {
@@ -75,20 +149,21 @@
                                     eth = web3.utils.fromWei(rv.amountGet, 'ether');
                                     rate = eth / sls;
                                     color = "red";
-
                                     filled = web3.utils.fromWei(filled);
                                     remained = (eth - filled) * sls / eth;
                                 }
 
-                                $("#orderBook tr:last").after(sprintf("<tr style='background: %s' data-logid=%s><td>%s</td><td>%s</td><td>[%s/%s]</td><td>%s</td><td>%s</td></>", color, e.id, order, rate, remained, sls, eth, rv.user));
+                                var expires = (rv.expires > currentBlock) ? rv.expires - currentBlock : 0;
+
+                                $("#orderBook tr:last").after(sprintf("<tr id='o_%s' style='background: %s' data-logid='%s'><td>%s</td><td>%s</td><td>[%s/%s]</td><td>%s</td><td>%s</td></tr>", rv.nonce, color, e.id, order, rate, remained, sls, eth, expires));
 
                                 if (rv.user == account) {
-                                    $("#myOrder tr:last").after(sprintf("<tr style='background: lightgrey'><td>%s</td><td>%s</td><td>[%s/%s]</td><td>%s</td>", order, rate, remained, sls, eth));
+                                    $("#myOrders tr:last").after(sprintf("<tr id='mo_%s' style='background: %s' data-logid='%s'><td>%s</td><td>%s</td><td>[%s/%s]</td><td>%s</td><td>%s</td><td>%s</td></tr>", rv.nonce, (expires > 0 ? 'lightgrey' : 'dimgray'), e.id, order, rate, remained, sls, eth, expires, (expires > 0 ? 'alive' : 'expired')));
                                 }
 
-                                eventList[e.id] = event;
+                                eventList[e.id] = e;
                             });
-                    })(event);
+                    })(events[i]);
                 }
             });
 
@@ -98,7 +173,6 @@
                 toBlock: 'latest'
             })
             .then(function(trades) {
-                //console.log(trades);
                 for (var i = 0; i < trades.length; i++) {
                     var rv = trades[i].returnValues;
                     if (rv.get == account || rv.give == account) {
@@ -115,33 +189,27 @@
                             rate = eth / sls;
                         }
 
-                        $("#myTrade tr:last").after(sprintf("<tr style='background: lightgrey'><td>%s</td><td>%s</td><td>%s</td><td>%s</td>", order, rate, sls, eth));
+                        $("#myTrades tr:last").after(sprintf("<tr style='background: lightgrey'><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>", order, rate, sls, eth));
                     }
                 }
             });
 
-        web3.eth.getAccounts().then(function(r) {
-            account = r[0];
-            $("#account").text(sprintf("Account: %s", account));
-        });
-
-        setInterval(function() {
-            web3.eth.getBalance(account).then(function(r) {
-                $("#ethInWallet").text(sprintf("ETH in wallet: %s", web3.utils.fromWei(r, 'ether')));
-            })
-
-            sls.methods.balanceOf(account).call().then(function(r) {
-                $("#slsInWallet").text(sprintf("SLS in wallet: %s", weiToSls(r)));
-            });
-
-            solaExchange.methods.balanceOf(eth_address, account).call().then(function(r) {
-                $("#ethTokenInSolaExchange").text(sprintf("ETH Token in SolaExchange: %s", web3.utils.fromWei(r, 'ether')));
-            });
-
-            solaExchange.methods.balanceOf(sls_address, account).call().then(function(r) {
-                $("#slsTokenInSolaExchange").text(sprintf("SLS Token in SolaExchange: %s", weiToSls(r)));
-            });
-        }, 1000);
+        //暫時用延後查詢解決, 應該改成全部查詢集成後, 才統一顯示
+        setTimeout(function() {
+            solaExchange.getPastEvents('Cancel', {
+                    //filter: { myIndexedParam: [20, 23], myOtherIndexedParam: '0x123456789...' }, // Using an array means OR: e.g. 20 or 23
+                    fromBlock: 0,
+                    toBlock: 'latest'
+                })
+                .then(function(cancels) {
+                    for (var i = 0; i < cancels.length; i++) {
+                        var rv = cancels[i].returnValues;
+                        $("#mo_" + rv.nonce).find('td:last').text('canceled');
+                        $("#mo_" + rv.nonce).css("background", "dimgray");
+                        $("#o_" + rv.nonce).hide();
+                    }
+                });
+        }, 2000);
     });
 
     function btn_deposit() {
@@ -185,22 +253,25 @@
     function btn_orderBuySls() {
         var get = $("#orderSlsToken").val();
         var give = $("#orderEthToken").val();
+        var expires = parseInt($('#orderExpires').val()) + currentBlock;
         var nonce = Date.now();
-        solaExchange.methods.order(sls_address, slsToWei(get), eth_address, web3.utils.toWei(give, 'ether'), 10000000, nonce).send({ from: account })
+        solaExchange.methods.order(sls_address, slsToWei(get), eth_address, web3.utils.toWei(give, 'ether'), expires, nonce).send({ from: account })
             .then(console.log);
     }
 
     function btn_orderSellSls() {
         var get = $("#orderEthToken").val();
         var give = $("#orderSlsToken").val();
+        var expires = parseInt($('#orderExpires').val()) + currentBlock;
         var nonce = Date.now();
-        solaExchange.methods.order(eth_address, web3.utils.toWei(get, 'ether'), sls_address, slsToWei(give), 10000000, nonce).send({ from: account })
+        solaExchange.methods.order(eth_address, web3.utils.toWei(get, 'ether'), sls_address, slsToWei(give), expires, nonce).send({ from: account })
             .then(console.log);
     }
     </script>
 </head>
 
 <body>
+    <div id="currentBlock"></div>
     <div id="account"></div>
     <br/>
     <div id="ethInWallet"></div>
@@ -222,6 +293,8 @@
     <input id="orderSlsToken" type="number" value=0></input>
     <label>ETH:</label>
     <input id="orderEthToken" type="number" value=0></input>
+    <label>Expires:</label>
+    <input id="orderExpires" type="number" value=0></input>
     <button type="button" onclick="btn_orderBuySls()">order (buy SLS by paying ETH)</button>
     <button type="button" onclick="btn_orderSellSls()">order (sell SLS for obtaining ETH)</button>
     <hr/>
@@ -234,24 +307,26 @@
                     <th>SLS/ETH</th>
                     <th>SLS</th>
                     <th>ETH</th>
-                    <th>USER</th>
+                    <th>EXPIRES</th>
                 </tr>
             </table>
         </span>
         <span style="float: left">
             <label>My Orders</label>
-            <table id="myOrder">
+            <table id="myOrders">
                 <tr>
                     <th>Order</th>
                     <th>SLS/ETH</th>
                     <th>SLS</th>
                     <th>ETH</th>
+                    <th>EXPIRES</th>
+                    <th>STATUS</th>
                 </tr>
             </table>
         </span>
         <span style="float: left">
             <label>My Trades</label>
-            <table id="myTrade">
+            <table id="myTrades">
                 <tr>
                     <th>Trade</th>
                     <th>SLS/ETH</th>
