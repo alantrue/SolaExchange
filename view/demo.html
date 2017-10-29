@@ -37,7 +37,7 @@
             eth = web3.utils.fromWei(rv.amountGive, 'ether');
             rate = eth / sls;
         } else {
-            order = "Buy";
+            type = "Buy";
             sls = weiToSls(rv.amountGive);
             eth = web3.utils.fromWei(rv.amountGet, 'ether');
             rate = eth / sls;
