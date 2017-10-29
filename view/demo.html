@@ -73,8 +73,13 @@
         setInterval(function() {
             if (autoSwitchAccount) {
                 web3.eth.getAccounts().then(function(r) {
+                    if (account == r[0]) {
+                        return;
+                    }
+
                     account = r[0];
                     $("#account").text(sprintf("Account: %s", account));
+                    dataInitialized = false;
                 });
             }
 
