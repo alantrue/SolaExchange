@@ -3,12 +3,12 @@
 
 <head>
     <title>Demo</title>
-    <link rel="stylesheet" type="text/css" href="css/main.css">
+    <link rel="stylesheet" type="text/css" href="css/main.css?{{.Uncache}}">
     <script type="text/javascript" src="js/jquery.js"></script>
     <script type="text/javascript" src="js/sprintf.js"></script>
     <script type="text/javascript" src="js/web3.min.js"></script>
-    <script type="text/javascript" src="data/SLS_ABI.js"></script>
-    <script type="text/javascript" src="data/SOLAEXCHANGE_ABI.js"></script>
+    <script type="text/javascript" src="data/slsABI.js?{{.Uncache}}"></script>
+    <script type="text/javascript" src="data/solaExchangeABI.js?{{.Uncache}}"></script>
     <script type="text/javascript">
     if (typeof web3 !== 'undefined') {
         web3 = new Web3(web3.currentProvider);
@@ -17,13 +17,14 @@
         web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
     }
 
-    var eth_address = '0x0000000000000000000000000000000000000000';
+    var ethAddress = '0x0000000000000000000000000000000000000000';
+    var feeRate = 0.005;
     var autoSwitchAccount = true; //如要測試多帳號, 可改成false
     var account;
     var currentBlock;
     var dataInitialized = false;
-    var sls = new web3.eth.Contract(sls_abi, sls_address);
-    var solaExchange = new web3.eth.Contract(solaExchange_abi, solaExchange_address);
+    var sls = new web3.eth.Contract(slsABI, slsAddress);
+    var solaExchange = new web3.eth.Contract(solaExchangeABI, solaExchangeAddress);
     var eventList = new Object;
 
     function openTradeDialog(logId) {
@@ -31,7 +32,7 @@
         var rv = e.returnValues;
 
         var type, sls, eth, rate;
-        if (sls_address == rv.tokenGet) {
+        if (slsAddress == rv.tokenGet) {
             type = "Sell";
             sls = weiToSls(rv.amountGet);
             eth = web3.utils.fromWei(rv.amountGive, 'ether');
@@ -48,7 +49,7 @@
         $("#tradeDialogAmountLabel").text("SLS");
         $("#tradeDialogAmount").val(sls);
         $("#tradeDialogEth").val(eth);
-        $("#tradeDialogFee").val("?");
+        $("#tradeDialogFee").val(eth * feeRate);
 
         $("#tradeDialog").data("logId", logId);
         $("#tradeDialog").data("rate", rate);
@@ -94,7 +95,7 @@
             v = web3.utils.toDecimal(v) + 27;
 
             var amountGet;
-            if (sls_address == rv.tokenGet) {
+            if (slsAddress == rv.tokenGet) {
                 amountGet = slsToWei($("#tradeDialogAmount").val());
             } else {
                 amountGet = web3.utils.toWei($("#tradeDialogEth").val(), 'ether');
@@ -113,6 +114,7 @@
         $("#tradeDialogAmount").bind('keyup mouseup', function() {
             var eth = $("#tradeDialog").data("rate") * $("#tradeDialogAmount").val();
             $("#tradeDialogEth").val(eth);
+            $("#tradeDialogFee").val(eth * feeRate);
         });
 
         web3.eth.getAccounts().then(function(r) {
@@ -155,24 +157,24 @@
                     $("#slsInWallet").text(sprintf("SLS in wallet: %s", weiToSls(r)));
                 });
 
-                solaExchange.methods.balanceOf(eth_address, account).call().then(function(r) {
+                solaExchange.methods.balanceOf(ethAddress, account).call().then(function(r) {
                     $("#ethTokenInSolaExchange").text(sprintf("ETH Token in SolaExchange: %s", web3.utils.fromWei(r, 'ether')));
                 });
 
-                solaExchange.methods.balanceOf(sls_address, account).call().then(function(r) {
+                solaExchange.methods.balanceOf(slsAddress, account).call().then(function(r) {
                     $("#slsTokenInSolaExchange").text(sprintf("SLS Token in SolaExchange: %s", weiToSls(r)));
                 });
             }
         }, 1000);
     });
 
-    function btn_deposit() {
+    function btnDeposit() {
         var v = $("#ethToken").val();
         solaExchange.methods.deposit().send({ from: account, value: web3.utils.toWei(v, 'ether') })
             .then(console.log);
     }
 
-    function btn_withdraw() {
+    function btnWithdraw() {
         var v = $("#ethToken").val();
         solaExchange.methods.withdraw(web3.utils.toWei(v, 'ether')).send({ from: account })
             .then(console.log);
@@ -186,42 +188,42 @@
         return v / 100000000;
     }
 
-    function btn_approve() {
+    function btnApprove() {
         var v = $("#slsToken").val();
-        sls.methods.approve(solaExchange_address, slsToWei(v)).send({ from: account })
+        sls.methods.approve(solaExchangeAddress, slsToWei(v)).send({ from: account })
             .then(console.log);
     }
 
-    function btn_depositToken() {
+    function btnDepositToken() {
         var v = $("#slsToken").val();
-        solaExchange.methods.depositToken(sls_address, slsToWei(v)).send({ from: account })
+        solaExchange.methods.depositToken(slsAddress, slsToWei(v)).send({ from: account })
             .then(console.log);
     }
 
-    function btn_withdrawToken() {
+    function btnWithdrawToken() {
         var v = $("#slsToken").val();
-        solaExchange.methods.withdrawToken(sls_address, slsToWei(v)).send({ from: account })
+        solaExchange.methods.withdrawToken(slsAddress, slsToWei(v)).send({ from: account })
             .then(console.log);
     }
 
-    function btn_orderBuySls() {
+    function btnOrderBuySls() {
         var get = $("#orderSlsToken").val();
         var give = $("#orderEthToken").val();
         var expires = parseInt($('#orderExpires').val()) + currentBlock;
         var nonce = Date.now();
-        solaExchange.methods.order(sls_address, slsToWei(get), eth_address, web3.utils.toWei(give, 'ether'), expires, nonce).send({ from: account })
+        solaExchange.methods.order(slsAddress, slsToWei(get), ethAddress, web3.utils.toWei(give, 'ether'), expires, nonce).send({ from: account })
             .then(function(r) {
                 console.log(r);
                 refreshOrder();
             });
     }
 
-    function btn_orderSellSls() {
+    function btnOrderSellSls() {
         var get = $("#orderEthToken").val();
         var give = $("#orderSlsToken").val();
         var expires = parseInt($('#orderExpires').val()) + currentBlock;
         var nonce = Date.now();
-        solaExchange.methods.order(eth_address, web3.utils.toWei(get, 'ether'), sls_address, slsToWei(give), expires, nonce).send({ from: account })
+        solaExchange.methods.order(ethAddress, web3.utils.toWei(get, 'ether'), slsAddress, slsToWei(give), expires, nonce).send({ from: account })
             .then(function(r) {
                 console.log(r);
                 refreshOrder();
@@ -245,7 +247,7 @@
                             .then(function(filled) {
                                 //console.log(e);
                                 var order, rate, sls, eth, remained;
-                                if (sls_address == rv.tokenGet) {
+                                if (slsAddress == rv.tokenGet) {
                                     order = "BUY";
                                     sls = weiToSls(rv.amountGet);
                                     eth = web3.utils.fromWei(rv.amountGive, 'ether');
@@ -295,7 +297,7 @@
                     var rv = trades[i].returnValues;
                     if (rv.get == account || rv.give == account) {
                         var order, rate, sls, eth;
-                        if (sls_address == rv.tokenGet) {
+                        if (slsAddress == rv.tokenGet) {
                             order = (rv.get == account) ? "BUY" : "SELL";
                             sls = weiToSls(rv.amountGet);
                             eth = web3.utils.fromWei(rv.amountGive, 'ether');
@@ -357,13 +359,13 @@
     <div id="slsTokenInSolaExchange"></div>
     <hr/>
     <input id=ethToken type="number" value=0></input>
-    <button type="button" onclick="btn_deposit()">deposit ETH</button>
-    <button type="button" onclick="btn_withdraw()">withdraw ETH</button>
+    <button type="button" onclick="btnDeposit()">deposit ETH</button>
+    <button type="button" onclick="btnWithdraw()">withdraw ETH</button>
     <hr/>
     <input id=slsToken type="number" value=0></input>
-    <button type="button" onclick="btn_approve()">approve SLS</button>
-    <button type="button" onclick="btn_depositToken()">depositToken SLS</button>
-    <button type="button" onclick="btn_withdrawToken()">withdrawToken SLS</button>
+    <button type="button" onclick="btnApprove()">approve SLS</button>
+    <button type="button" onclick="btnDepositToken()">depositToken SLS</button>
+    <button type="button" onclick="btnWithdrawToken()">withdrawToken SLS</button>
     <hr/>
     <label>SLS:</label>
     <input id="orderSlsToken" type="number" value=0></input>
@@ -371,8 +373,8 @@
     <input id="orderEthToken" type="number" value=0></input>
     <label>Expires:</label>
     <input id="orderExpires" type="number" value=0></input>
-    <button type="button" onclick="btn_orderBuySls()">order (buy SLS by paying ETH)</button>
-    <button type="button" onclick="btn_orderSellSls()">order (sell SLS for obtaining ETH)</button>
+    <button type="button" onclick="btnOrderBuySls()">order (buy SLS by paying ETH)</button>
+    <button type="button" onclick="btnOrderSellSls()">order (sell SLS for obtaining ETH)</button>
     <hr/>
     <div>
         <span style="float: left">
@@ -426,7 +428,7 @@
             <input id="tradeDialogEth" type="number" disabled></input>
             <br/>
             <br/>
-            <div>Fee</div>
+            <div>Fee (ETH)</div>
             <input id="tradeDialogFee" type="number" disabled></input>
             <br/>
             <br/>

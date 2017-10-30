@@ -1,13 +1,14 @@
 package main
 
 import (
-	"fmt"
 	"html/template"
+	"log"
 	"net/http"
+	"time"
 )
 
 func main() {
-	fmt.Println("server starting")
+	log.Println("server starting")
 
 	http.HandleFunc("/demo", handlerDemo)
 
@@ -18,6 +19,19 @@ func main() {
 }
 
 func handlerDemo(w http.ResponseWriter, r *http.Request) {
-	t, _ := template.ParseFiles("view/demo.html")
-	t.Execute(w, nil)
+	t, err := template.ParseFiles("view/demo.html")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	data := struct {
+		Uncache string
+	}{
+		Uncache: time.Now().Format("20060102150405"),
+	}
+
+	err = t.Execute(w, data)
+	if err != nil {
+		log.Fatal(err)
+	}
 }

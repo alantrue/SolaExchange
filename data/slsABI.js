@@ -1,5 +1,5 @@
-var sls_address = '0xf3280F9f08DD5a2fD7Cb3BBE26C717D63e00399d';
-var sls_abi = [{
+var slsAddress = '0xf3280F9f08DD5a2fD7Cb3BBE26C717D63e00399d';
+var slsABI = [{
         "constant": true,
         "inputs": [],
         "name": "name",

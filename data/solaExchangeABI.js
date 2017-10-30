@@ -1,5 +1,5 @@
-var solaExchange_address = '0xB39d19d84E8aF8fECFCF37c7393F812bD90aFFE8';
-var solaExchange_abi = [{
+var solaExchangeAddress = '0xB39d19d84E8aF8fECFCF37c7393F812bD90aFFE8';
+var solaExchangeABI = [{
         "constant": false,
         "inputs": [{
                 "name": "tokenGet",
