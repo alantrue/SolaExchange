@@ -19,6 +19,7 @@ contract SolaExchange is Ownable {
   event Trade(address tokenGet, uint amountGet, address tokenGive, uint amountGive, address get, address give);
   event Deposit(address token, address user, uint amount, uint balance);
   event Withdraw(address token, address user, uint amount, uint balance);
+  event Transfer(address token, uint amount, address receiver, uint balance);
 
   modifier nonZeroAddress(address x) {
     require(x != 0x0);
@@ -76,6 +77,14 @@ contract SolaExchange is Ownable {
     Withdraw(0, msg.sender, amount, tokens[0][msg.sender]);
   }
 
+  function transfer(uint amount, address receiver) notZero(amount) {
+    require(receiver != 0x0);
+    require(tokens[0][msg.sender] >= amount);
+    tokens[0][msg.sender] = tokens[0][msg.sender].sub(amount);
+    tokens[0][receiver] = tokens[0][receiver].add(amount);
+    Transfer(0, amount, receiver, tokens[0][msg.sender]);
+  }
+
   function depositToken(address token, uint amount) nonZeroAddress(token) notZero(amount) needTokenAllowed(token) {
     //remember to call Token(address).approve(this, amount) or this contract will not be able to do the transfer on your behalf.
     if (!MiniMeToken(token).transferFrom(msg.sender, this, amount)) revert();
@@ -88,6 +97,14 @@ contract SolaExchange is Ownable {
     tokens[token][msg.sender] = tokens[token][msg.sender].sub(amount);
     if (!MiniMeToken(token).transfer(msg.sender, amount)) revert();
     Withdraw(token, msg.sender, amount, tokens[token][msg.sender]);
+  }
+
+  function transferToken(address token, uint amount, address receiver) needTokenAllowed(token) notZero(amount) {
+    require(receiver != 0x0);
+    require(tokens[token][msg.sender] >= amount);
+    tokens[token][msg.sender] = tokens[token][msg.sender].sub(amount);
+    tokens[token][receiver] = tokens[token][receiver].add(amount);
+    Transfer(token, amount, receiver, tokens[token][msg.sender]);
   }
 
   function balanceOf(address token, address user) constant returns (uint) {
