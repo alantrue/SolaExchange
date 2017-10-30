@@ -25,7 +25,9 @@
     var dataInitialized = false;
     var sls = new web3.eth.Contract(slsABI, slsAddress);
     var solaExchange = new web3.eth.Contract(solaExchangeABI, solaExchangeAddress);
-    var eventList = new Object;
+    var eventList = {};
+    var orderBook = {};
+    var myOrders = {};
 
     function openTradeDialog(logId) {
         var e = eventList[logId];
@@ -237,51 +239,116 @@
                 toBlock: 'latest'
             })
             .then(function(events) {
-                $("#orderBook tr:gt(0)").remove();
-                $("#myOrders tr:gt(0)").remove();
+                orderBook = { count: 0, orders: {} };
+                myOrders = { count: 0, orders: {} };
 
                 for (var i = 0; i < events.length; ++i) {
-                    (function(e) {
-                        var rv = e.returnValues;
+                    var e = events[i];
+                    var rv = e.returnValues;
+                    //console.log(e);
+                    var order, rate, sls, eth, remained;
+                    if (slsAddress == rv.tokenGet) {
+                        order = "BUY";
+                        sls = weiToSls(rv.amountGet);
+                        eth = web3.utils.fromWei(rv.amountGive, 'ether');
+                        rate = eth / sls;
+                        color = "lightgreen";
+                    } else {
+                        order = "SELL";
+                        sls = weiToSls(rv.amountGive);
+                        eth = web3.utils.fromWei(rv.amountGet, 'ether');
+                        rate = eth / sls;
+                        color = "red";
+                    }
+
+                    var expires = (rv.expires > currentBlock) ? rv.expires - currentBlock : 0;
+
+                    if (expires > 0) {
+                        orderBook.count += 1;
+                        orderBook.orders[e.id] = { logId:e.id, order: order, sls: sls, eth: eth, rate: rate, color: color, nonce: rv.nonce, expires: expires };
+                    }
+
+                    if (rv.user == account) {
+                        myOrders.count += 1;
+                        myOrders.orders[e.id] = { logId:e.id, order: order, sls: sls, eth: eth, rate: rate, color: color, nonce: rv.nonce, expires: expires };
+                    }
+
+                    eventList[e.id] = e;
+                    (function(event) {
                         solaExchange.methods.amountFilled(rv.tokenGet, rv.amountGet, rv.tokenGive, rv.amountGive, rv.expires, rv.nonce, rv.user, 0, "0x0", "0x0").call()
                             .then(function(filled) {
-                                //console.log(e);
-                                var order, rate, sls, eth, remained;
-                                if (slsAddress == rv.tokenGet) {
-                                    order = "BUY";
-                                    sls = weiToSls(rv.amountGet);
-                                    eth = web3.utils.fromWei(rv.amountGive, 'ether');
-                                    rate = eth / sls;
-                                    color = "lightgreen";
-                                    filled = weiToSls(filled);
-                                    remained = sls - filled;
-                                } else {
-                                    order = "SELL";
-                                    sls = weiToSls(rv.amountGive);
-                                    eth = web3.utils.fromWei(rv.amountGet, 'ether');
-                                    rate = eth / sls;
-                                    color = "red";
-                                    filled = web3.utils.fromWei(filled);
-                                    remained = (eth - filled) * sls / eth;
+                                var need1 = updateOrderData(orderBook, event.id, filled);
+                                var need2 = updateOrderData(myOrders, event.id, filled);
+                                if (!(need1 || need2)) {
+                                    delete eventList[event.id];
                                 }
 
-                                if (remained > 0) {
-                                    var expires = (rv.expires > currentBlock) ? rv.expires - currentBlock : 0;
+                                if (orderBook.count == 0) {
+                                    var sortable = sortForOrderBook(orderBook.orders);
 
-                                    if (expires > 0) {
-                                        $("#orderBook tr:last").after(sprintf("<tr id='o_%s' title='click to trade.' style='background: %s' data-logid='%s'><td>%s</td><td>%s</td><td>[%s/%s]</td><td>%s</td><td>%s</td></tr>", rv.nonce, color, e.id, order, rate, remained, sls, eth, expires));
+                                    $("#orderBook tr:gt(0)").remove();
+                                    for (var s in sortable) {
+                                        var o = sortable[s][0];
+                                        $("#orderBook tr:last").after(sprintf("<tr id='o_%s' title='click to trade.' style='background: %s' data-logid='%s'><td>%s</td><td>%s</td><td>[%s/%s]</td><td>%s</td><td>%s</td></tr>", o.nonce, o.color, o.logId, o.order, o.rate, o.remained, o.sls, o.eth, o.expires));
                                     }
+                                }
 
-                                    if (rv.user == account) {
-                                        $("#myOrders tr:last").after(sprintf("<tr id='mo_%s' title='click to cancel.' style='background: %s' data-logid='%s'><td>%s</td><td>%s</td><td>[%s/%s]</td><td>%s</td><td>%s</td><td>%s</td></tr>", rv.nonce, (expires > 0 ? 'lightgrey' : 'dimgray'), e.id, order, rate, remained, sls, eth, expires, (expires > 0 ? 'alive' : 'expired')));
+                                if (myOrders.count == 0) {
+                                    $("#myOrders tr:gt(0)").remove();
+                                    for (var id in myOrders.orders) {
+                                        var o = myOrders.orders[id];
+                                        $("#myOrders tr:last").after(sprintf("<tr id='mo_%s' title='click to cancel.' style='background: %s' data-logid='%s'><td>%s</td><td>%s</td><td>[%s/%s]</td><td>%s</td><td>%s</td><td>%s</td></tr>", o.nonce, (o.expires > 0 ? 'lightgrey' : 'dimgray'), o.logId, o.order, o.rate, o.remained, o.sls, o.eth, o.expires, (o.expires > 0 ? 'alive' : 'expired')));
                                     }
-
-                                    eventList[e.id] = e;
                                 }
                             });
-                    })(events[i]);
+                    })(e);
                 }
             });
+    }
+
+    function updateOrderData(orderData, eventId, filled) {
+        if (orderData.orders[eventId]) {
+            orderData.count -= 1;
+
+            var o = orderData.orders[eventId];
+            if (o.order == "BUY") {
+                filled = weiToSls(filled);
+                o.remained = o.sls - filled;
+            } else {
+                filled = web3.utils.fromWei(filled);
+                o.remained = (o.eth - filled) * o.sls / o.eth;
+            }
+
+            if (o.remained == 0) {
+                delete orderData.orders[eventId];
+            } else {
+                return true; //需要保留event log
+            }
+        }
+
+        return false;
+    }
+
+    function sortForOrderBook(orders) {
+        var sortable = [];
+        for (var id in orders) {
+            var o = orders[id];
+            sortable.push([o, o.order, o.rate]);
+        }
+
+        sortable.sort(function(a, b) {
+            if (a[1] != b[1]) {
+                return a[1] - b[1];
+            } else {
+                if (a[1] == "BUY") {
+                    return a[2] - b[2];
+                } else {
+                    return b[2] - a[2];
+                }
+            }
+        });
+
+        return sortable;
     }
 
     function refreshTrade() {
