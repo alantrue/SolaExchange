@@ -146,6 +146,7 @@
                         dataInitialized = true;
                         refreshOrder();
                         refreshTrade();
+                        refreshTransfer();
                     } else {
                         refreshExpires();
                     }
@@ -265,12 +266,12 @@
 
                     if (expires > 0) {
                         orderBook.count += 1;
-                        orderBook.orders[e.id] = { logId:e.id, order: order, sls: sls, eth: eth, rate: rate, color: color, nonce: rv.nonce, expires: expires };
+                        orderBook.orders[e.id] = { logId: e.id, order: order, sls: sls, eth: eth, rate: rate, color: color, nonce: rv.nonce, expires: expires };
                     }
 
                     if (rv.user == account) {
                         myOrders.count += 1;
-                        myOrders.orders[e.id] = { logId:e.id, order: order, sls: sls, eth: eth, rate: rate, color: color, nonce: rv.nonce, expires: expires };
+                        myOrders.orders[e.id] = { logId: e.id, order: order, sls: sls, eth: eth, rate: rate, color: color, nonce: rv.nonce, expires: expires };
                     }
 
                     eventList[e.id] = e;
@@ -408,6 +409,65 @@
             }
         });
     }
+
+    function btnTransfer() {
+        var token = $("#transferToken").val();
+        var amount = $("#transferTokenAmount").val();
+        var address = $("#transferAddress").val();
+        switch(token) {
+            case "0":
+                token = ethAddress;
+                amount = web3.utils.toWei(amount, 'ether');
+                break;
+            case "1":
+                token = slsAddress;
+                amount = slsToWei(amount);
+                break;
+            default:
+                alert("unknown token type");
+                return;
+        }
+        solaExchange.methods.transferToken(token, amount, address).send({ from: account })
+            .then(function(r) {
+                console.log(r);
+            });
+    }
+
+    function refreshTransfer() {
+        solaExchange.getPastEvents('Transfer', {
+                //filter: { myIndexedParam: [20, 23], myOtherIndexedParam: '0x123456789...' }, // Using an array means OR: e.g. 20 or 23
+                fromBlock: 0,
+                toBlock: 'latest'
+            })
+            .then(function(transfer) {
+                console.log(transfer);
+                $("#myTransferFrom tr:gt(0)").remove();
+                $("#myTransferTo tr:gt(0)").remove();
+
+                for (var i = 0; i < transfer.length; i++) {
+                    var rv = transfer[i].returnValues;
+                    var token, amount;
+                    switch(rv.token) {
+                        case ethAddress:
+                            token = "ETH";
+                            amount = web3.utils.fromWei(rv.amount, 'ether');
+                            break;
+                        case slsAddress:
+                            token = "SLS";
+                            amount = weiToSls(rv.amount);
+                            break;
+                        default:
+                            alert("unknown token type");
+                            return;
+                    }
+
+                    if (rv.receiver == account) {
+                        $("#myTransferFrom tr:last").after(sprintf("<tr style='background: lightgrey'><td>%s</td><td>%s</td><td>%s</td></tr>", token, amount, "unknown"));
+                    }
+                    //TODO:myTransferTo
+                }
+            });
+    }
     </script>
 </head>
 
@@ -421,14 +481,24 @@
     <div id="ethTokenInSolaExchange"></div>
     <div id="slsTokenInSolaExchange"></div>
     <hr/>
-    <input id=ethToken type="number" value=0></input>
+    <input id="ethToken" type="number" value=0></input>
     <button type="button" onclick="btnDeposit()">deposit ETH</button>
     <button type="button" onclick="btnWithdraw()">withdraw ETH</button>
     <hr/>
-    <input id=slsToken type="number" value=0></input>
+    <input id="slsToken" type="number" value=0></input>
     <button type="button" onclick="btnApprove()">approve SLS</button>
     <button type="button" onclick="btnDepositToken()">depositToken SLS</button>
     <button type="button" onclick="btnWithdrawToken()">withdrawToken SLS</button>
+    <hr/>
+    <select id="transferToken">
+        <option value="0">ETH</option>
+        <option value="1">SLS</option>
+    </select>
+    <label>Amount:</label>
+    <input id="transferTokenAmount" type="number" value=0></input>
+    <label>Receiver Address:</label>
+    <input id="transferAddress" type="text"></input>
+    <button type="button" onclick="btnTransfer()">transfer</button>
     <hr/>
     <label>SLS:</label>
     <input id="orderSlsToken" type="number" value=0></input>
@@ -473,6 +543,27 @@
                     <th>SLS/ETH</th>
                     <th>SLS</th>
                     <th>ETH</th>
+                </tr>
+            </table>
+        </span>
+        <span style="float: left">
+            <label>My Transfer From</label>
+            <table id="myTransferFrom">
+                <tr>
+                    <th>Token</th>
+                    <th>Amount</th>
+                    <th>Sender</th>
+                </tr>
+            </table>
+        </span>
+
+        <span style="float: left">
+            <label>My Transfer To</label>
+            <table id="myTransferTo">
+                <tr>
+                    <th>Token</th>
+                    <th>Amount</th>
+                    <th>Receiver</th>
                 </tr>
             </table>
         </span>

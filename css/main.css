@@ -28,3 +28,7 @@
 #myOrders tr td {
 	cursor: pointer;
 }
+
+#transferAddress {
+	width: 350px;
+}
