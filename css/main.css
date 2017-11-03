@@ -32,3 +32,16 @@
 #transferAddress {
 	width: 350px;
 }
+
+th {
+	text-align: left;
+}
+
+#projects tr td {
+	background: lightgrey;
+}
+
+#map {
+	width: 300px;
+	height: 400px;
+}

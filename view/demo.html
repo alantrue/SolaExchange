@@ -7,8 +7,12 @@
     <script type="text/javascript" src="js/jquery.js"></script>
     <script type="text/javascript" src="js/sprintf.js"></script>
     <script type="text/javascript" src="js/web3.min.js"></script>
+    <script type="text/javascript" src="js/Chart.min.js"></script>
+    <script type="text/javascript" src="http://maps.google.com/maps/api/js?key=AIzaSyCQ3UTayHzAcoPXJUM3Ag_-FBxII1o6fNg"></script>
+    <script type="text/javascript" src="js/gmaps.js?{{.Uncache}}"></script>
     <script type="text/javascript" src="data/slsABI.js?{{.Uncache}}"></script>
     <script type="text/javascript" src="data/solaExchangeABI.js?{{.Uncache}}"></script>
+    <script type="text/javascript" src="data/map_style.json?{{.Uncache}}"></script>
     <script type="text/javascript">
     if (typeof web3 !== 'undefined') {
         web3 = new Web3(web3.currentProvider);
@@ -28,6 +32,8 @@
     var eventList = {};
     var orderBook = {};
     var myOrders = {};
+    var allProject;
+    var myBar;
 
     function openTradeDialog(logId) {
         var e = eventList[logId];
@@ -119,6 +125,86 @@
             $("#tradeDialogFee").val(eth * feeRate);
         });
 
+        $("#projects").on("click", "tr", function() {
+            var id = $(this).data("id");
+            var p = allProject.find(function(a) {
+                return a.id == id;
+            });
+
+            var map = new GMaps({
+                div: '#map',
+                lat: p.coord.lat,
+                lng: p.coord.lng,
+                zoom: 7,
+                options: {
+                    styles: mapStyle,
+                    mapTypeControl: false,
+                    fullscreenControl: false,
+                    streetViewControl: false
+                }
+            });
+
+            var m = map.addMarker({
+                lat: p.coord.lat,
+                lng: p.coord.lng,
+                title: p.name,
+                infoWindow: {
+                    content: sprintf('<h8>%s</h8><div>裝置容量: %s(kW)</div>', p.name, p.capacity),
+                    maxWidth: 100
+                }
+            });
+
+            console.log(p.values);
+
+            var values = [];
+            for (var dt in p.values) {
+                values.push({date: dt, value: p.values[dt]});
+            }
+
+            values.sort(function(a, b) {
+                return a - b;
+            });
+
+            var lables = [];
+            var datas = [];
+            values.forEach(function(item, index) {
+                lables.push(item.date);
+                datas.push(item.value);
+            });
+
+            var ctx = $("#chart-area");
+            ctx.empty;
+
+            if (myBar){
+                myBar.destroy();
+            }
+            myBar = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: lables,
+                    datasets: [{
+                        label: sprintf('%s - 日發電量(kW)', p.name),
+                        data: datas,
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        yAxes: [{
+                            ticks: {
+                                beginAtZero: true
+                            }
+                        }]
+                    }
+                }
+            });
+
+        });
+
+        init();
+
         web3.eth.getAccounts().then(function(r) {
             account = r[0];
             $("#account").text(sprintf("Account: %s", account));
@@ -170,6 +256,51 @@
             }
         }, 1000);
     });
+
+    function init() {
+        var map = new GMaps({
+            div: '#map',
+            zoom: 7,
+            lat: 23.6662529,
+            lng: 120.8278127,
+            options: {
+                styles: mapStyle,
+                mapTypeControl: false,
+                fullscreenControl: false,
+                streetViewControl: false
+            }
+        });
+
+        $.getJSON("https://sola-api.herokuapp.com/api/v1/projects", function(data) {
+            allProject = data;
+            allProject.forEach(function(item, index) {
+                $("#projects tr:last").after(sprintf("<tr data-id='%s'><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>", item.id, item.name, item.date.slice(0, 10), item.capacity, item.decay));
+
+                var p = allProject.find(function(a) {
+                    return a.id == item.id;
+                });
+                p.values = {};
+            });
+        });
+        $.getJSON("https://sola-api.herokuapp.com/api/v1/values", function(json) {
+            console.log(json);
+            json.forEach(function(item, index) {
+                var p = allProject.find(function(a) {
+                    return a.id == item.id;
+                });
+
+                var dt = item.dt.slice(0, 10);
+                var v = p.values[dt];
+                if (v) {
+                    v += item.value;
+                    p.values[dt] = v;
+                } else {
+                    p.values[dt] = item.value;
+                }
+            });
+            console.log(allProject);
+        });
+    }
 
     function btnDeposit() {
         var v = $("#ethToken").val();
@@ -414,7 +545,7 @@
         var token = $("#transferToken").val();
         var amount = $("#transferTokenAmount").val();
         var address = $("#transferAddress").val();
-        switch(token) {
+        switch (token) {
             case "0":
                 token = ethAddress;
                 amount = web3.utils.toWei(amount, 'ether');
@@ -447,7 +578,7 @@
                 for (var i = 0; i < transfer.length; i++) {
                     var rv = transfer[i].returnValues;
                     var token, amount;
-                    switch(rv.token) {
+                    switch (rv.token) {
                         case ethAddress:
                             token = "ETH";
                             amount = web3.utils.fromWei(rv.amount, 'ether');
@@ -509,7 +640,7 @@
     <button type="button" onclick="btnOrderBuySls()">order (buy SLS by paying ETH)</button>
     <button type="button" onclick="btnOrderSellSls()">order (sell SLS for obtaining ETH)</button>
     <hr/>
-    <div>
+    <div style="overflow: auto;">
         <span style="float: left">
             <label>Order Book</label>
             <table id="orderBook">
@@ -556,7 +687,6 @@
                 </tr>
             </table>
         </span>
-
         <span style="float: left">
             <label>My Transfer To</label>
             <table id="myTransferTo">
@@ -567,6 +697,25 @@
                 </tr>
             </table>
         </span>
+    </div>
+    <hr/>
+    <div style="overflow: auto;">
+        <span style="float: left">
+            <label>Projects</label>
+            <table id="projects">
+                <tr>
+                    <th>電廠代號</th>
+                    <th>發電起始日</th>
+                    <th>裝置容量 (kW)</th>
+                    <th>發電年衰減率</th>
+                </tr>
+            </table>
+        </span>
+        <div id="map" style="float: left">
+        </div>
+        <div class="box" style="float: left; width: 800px;">
+            <canvas id="chart-area" class="zone"></canvas>
+        </div>
     </div>
     <div id="tradeMask" hidden="true">
         <div id="tradeDialog">
