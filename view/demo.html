@@ -158,11 +158,17 @@
 
             var values = [];
             for (var dt in p.values) {
-                values.push({date: dt, value: p.values[dt]});
+                values.push({ date: dt, value: p.values[dt] });
             }
 
             values.sort(function(a, b) {
-                return a - b;
+                if (a.date < b.date) {
+                    return -1;
+                } else if (a.date > b.date) {
+                    return 1;
+                } else {
+                    return 0;
+                }
             });
 
             var lables = [];
@@ -175,7 +181,7 @@
             var ctx = $("#chart-area");
             ctx.empty;
 
-            if (myBar){
+            if (myBar) {
                 myBar.destroy();
             }
             myBar = new Chart(ctx, {
@@ -599,6 +605,15 @@
                 }
             });
     }
+
+    function test() {
+        $.getJSON("/test2", function(data) {
+            console.log(data);
+            for (var name in data) {
+                $(sprintf("input[name='%s']", name)).val(data[name]);
+            }
+        });
+    }
     </script>
 </head>
 
@@ -739,6 +754,45 @@
             <button id="tradeDialogCancel" type="button" onclick="$('#tradeMask').hide();">cancel</button>
             <button id="tradeDialogConfirm" type="button">trade</button>
         </div>
+    </div>
+    <button type="button" value="Go" onclick="test();">Test</button>
+    <div>
+        <form id="formCreditCard" method="post" accept-charset="UTF-8" action="https://payment-stage.allpay.com.tw/Cashier/AioCheckOut/V4">
+            MerchantID 商店代號:
+            <input type="text" name="MerchantID" value="2000132" />
+            <br /> MerchantTradeNo 商店交易編號:
+            <input type="text" name="MerchantTradeNo" value="DX201711040035410390" />
+            <br /> MerchantTradeDate 商店交易時間:
+            <input type="text" name="MerchantTradeDate" value="2017/11/04 00:35:41" />
+            <br /> PaymentType 交易類型:
+            <input type="text" name="PaymentType" value="aio" />
+            <br /> TotalAmount 交易金額:
+            <input type="text" name="TotalAmount" value="5" />
+            <br /> TradeDesc 交易描述:
+            <input type="text" name="TradeDesc" value="建立信用卡測試訂單" />
+            <br /> ItemName 商品名稱:
+            <input type="text" name="ItemName" value="MacBook 30元X2#iPhone6s 40元X1" />
+            <br /> ReturnURL 付款完成通知回傳網址:
+            <input type="text" name="ReturnURL" value="https://developers.allpay.com.tw/AioMock/MerchantReturnUrl" />
+            <br /> ChoosePayment 預設付款方式:
+            <input type="text" name="ChoosePayment" value="Credit" />
+            <br /> 會員商店代碼:
+            <input type="text" name="StoreID" value="" />
+            <br /> ClientBackURL Client端返回廠商網址:
+            <input type="text" name="ClientBackURL" value="https://developers.allpay.com.tw/AioMock/MerchantClientBackUrl" />
+            <br /> CreditInstallment 刷卡分期期數:
+            <input type="text" name="CreditInstallment" value="" />
+            <br /> InstallmentAmount 使用刷卡分期的付款金額:
+            <input type="text" name="InstallmentAmount" value="" />
+            <br /> Redeem 信用卡是否使用紅利折抵:
+            <input type="text" name="Redeem" value="" />
+            <br /> CheckMacValue 簽章類型:
+            <input type="text" name="EncryptType" value="1" />
+            <br /> CheckMacValue 檢查碼:
+            <input type="text" name="CheckMacValue" value="72CF507EF67364245B143A5C52D24018B431322B82FB10E2548676CC385BF59E" />
+            <br />
+            <input type="submit" value="送出訂單" />
+        </form>
     </div>
 </body>
 
