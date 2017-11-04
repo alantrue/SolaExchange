@@ -11,6 +11,10 @@ import (
 	"net/url"
 	"strings"
 	"time"
+
+	"./packetHandler"
+	simplejson "github.com/bitly/go-simplejson"
+	"github.com/gorilla/websocket"
 )
 
 type Order struct {
@@ -35,14 +39,67 @@ type Order struct {
 func main() {
 	log.Println("server starting")
 
+	go packetHandler.Do()
+
+	http.HandleFunc("/WS", handlerWS)
 	http.HandleFunc("/demo", handlerDemo)
+	http.HandleFunc("/buy", handlerBuy)
 	http.HandleFunc("/test", handlerTest)
-	http.HandleFunc("/test2", handlerTest2)
+	http.HandleFunc("/OrderComplete", handlerOrderComplete)
 
 	fs := http.FileServer(http.Dir("./"))
 	http.Handle("/", http.StripPrefix("/", fs))
 
-	http.ListenAndServe(":9100", nil)
+	http.ListenAndServe(":80", nil)
+}
+
+func handlerWS(w http.ResponseWriter, r *http.Request) {
+	c, err := websocket.Upgrade(w, r, w.Header(), 1024, 1024)
+	if err != nil {
+		log.Print("upgrade:", err)
+		return
+	}
+	defer c.Close()
+
+	tempID := time.Now().Format("20060102_150405")
+	packetHandler.Join(tempID, c)
+
+	for {
+		mt, message, err := c.ReadMessage()
+		if err != nil {
+			log.Println("read:", err)
+			packetHandler.Leave(tempID)
+			break
+		}
+		log.Printf("recv: %s", message)
+
+		js, err := simplejson.NewJson([]byte(message))
+		if err != nil {
+			panic("json format error")
+		}
+
+		opcode, err := js.Get("opcode").String()
+
+		log.Printf(opcode)
+
+		packetHandler.HandlePacket(c, mt, js)
+	}
+}
+
+func handlerOrderComplete(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+
+	if r.Form["RtnCode"][0] == "1" { //交易成功
+		id := r.Form["MerchantTradeNo"][0]
+		tradeNo := r.Form["TradeNo"][0]
+		tradeAmount := r.Form["TradeAmt"][0]
+		fmt.Println(id, tradeNo, tradeAmount)
+
+		packetHandler.TradeComplete(id)
+	} else {
+		fmt.Println(r.Form)
+	}
+
 }
 
 func handlerDemo(w http.ResponseWriter, r *http.Request) {
@@ -52,8 +109,10 @@ func handlerDemo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := struct {
+		IP      string
 		Uncache string
 	}{
+		IP:      "alantrue.ddns.net",
 		Uncache: time.Now().Format("20060102150405"),
 	}
 
@@ -63,39 +122,38 @@ func handlerDemo(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func getCheckMacValue2(id, date, itemName, price string) string {
+func createCheck(id, date, returnURL, clientBackURL, itemName, price string) string {
 	form := url.Values{}
 
-	//id := time.Now().Format("20060102150405")
-	//date := time.Now().Format("2006/01/02 15:04:05")
-
-	form.Add("MerchantID", "2000132")                                                           //MerchantID 商店代號
-	form.Add("MerchantTradeNo", id)                                                             //MerchantTradeNo 商店交易編號
-	form.Add("MerchantTradeDate", date)                                                         //MerchantTradeDate 商店交易時間
-	form.Add("PaymentType", "aio")                                                              //PaymentType 交易類型
-	form.Add("TotalAmount", price)                                                              //TotalAmount 交易金額
-	form.Add("TradeDesc", "建立信用卡測試訂單")                                                          //TradeDesc 交易描述
-	form.Add("ItemName", itemName)                                                              //ItemName 商品名稱
-	form.Add("ReturnURL", "https://developers.allpay.com.tw/AioMock/MerchantReturnUrl")         //ReturnURL 付款完成通知回傳網址
-	form.Add("ChoosePayment", "Credit")                                                         //ChoosePayment 預設付款方式
-	form.Add("StoreID", "")                                                                     //會員商店代碼
-	form.Add("ClientBackURL", "https://developers.allpay.com.tw/AioMock/MerchantClientBackUrl") //ClientBackURL Client端返回廠商網址
-	form.Add("CreditInstallment", "")                                                           //CreditInstallment 刷卡分期期數
-	form.Add("InstallmentAmount", "")                                                           //InstallmentAmount 使用刷卡分期的付款金額
-	form.Add("Redeem", "")                                                                      //Redeem 信用卡是否使用紅利折抵
-	form.Add("EncryptType", "1")                                                                //CheckMacValue 簽章類型
+	form.Add("MerchantID", "2000132")        //MerchantID 商店代號
+	form.Add("MerchantTradeNo", id)          //MerchantTradeNo 商店交易編號
+	form.Add("MerchantTradeDate", date)      //MerchantTradeDate 商店交易時間
+	form.Add("PaymentType", "aio")           //PaymentType 交易類型
+	form.Add("TotalAmount", price)           //TotalAmount 交易金額
+	form.Add("TradeDesc", "建立信用卡測試訂單")       //TradeDesc 交易描述
+	form.Add("ItemName", itemName)           //ItemName 商品名稱
+	form.Add("ReturnURL", returnURL)         //ReturnURL 付款完成通知回傳網址
+	form.Add("ChoosePayment", "Credit")      //ChoosePayment 預設付款方式
+	form.Add("StoreID", "")                  //會員商店代碼
+	form.Add("ClientBackURL", clientBackURL) //ClientBackURL Client端返回廠商網址
+	form.Add("CreditInstallment", "")        //CreditInstallment 刷卡分期期數
+	form.Add("InstallmentAmount", "")        //InstallmentAmount 使用刷卡分期的付款金額
+	form.Add("Redeem", "")                   //Redeem 信用卡是否使用紅利折抵
+	form.Add("EncryptType", "1")             //CheckMacValue 簽章類型
 
 	chk := getCheckMacValue(form)
 	return chk
 }
 
-func handlerTest2(w http.ResponseWriter, r *http.Request) {
+func handlerBuy(w http.ResponseWriter, r *http.Request) {
 	id := time.Now().Format("20060102150405")
 	date := time.Now().Format("2006/01/02 15:04:05")
+	returnURL := "http://alantrue.ddns.net/OrderComplete"
+	clientBackURL := "http://alantrue.ddns.net/demo"
 	itemName := "100 STTW"
 	price := "100"
 
-	chk := getCheckMacValue2(id, date, itemName, price)
+	chk := createCheck(id, date, returnURL, clientBackURL, itemName, price)
 
 	o := Order{
 		MerchantID:        "2000132",
@@ -105,10 +163,10 @@ func handlerTest2(w http.ResponseWriter, r *http.Request) {
 		TotalAmount:       price,
 		TradeDesc:         "建立信用卡測試訂單",
 		ItemName:          itemName,
-		ReturnURL:         "https://developers.allpay.com.tw/AioMock/MerchantReturnUrl",
+		ReturnURL:         returnURL,
 		ChoosePayment:     "Credit",
 		StoreID:           "",
-		ClientBackURL:     "https://developers.allpay.com.tw/AioMock/MerchantClientBackUrl",
+		ClientBackURL:     clientBackURL,
 		CreditInstallment: "",
 		InstallmentAmount: "",
 		Redeem:            "",
@@ -123,6 +181,9 @@ func handlerTest2(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Write(b)
+
+	userID := r.FormValue("userId")
+	packetHandler.Trade(userID, id)
 }
 
 func handlerTest(w http.ResponseWriter, r *http.Request) {

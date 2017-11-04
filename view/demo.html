@@ -34,6 +34,7 @@
     var myOrders = {};
     var allProject;
     var myBar;
+    var userId;
 
     function openTradeDialog(logId) {
         var e = eventList[logId];
@@ -264,6 +265,8 @@
     });
 
     function init() {
+        connectToServer();
+
         var map = new GMaps({
             div: '#map',
             zoom: 7,
@@ -607,17 +610,63 @@
     }
 
     function test() {
-        $.getJSON("/test2", function(data) {
-            console.log(data);
-            for (var name in data) {
-                $(sprintf("input[name='%s']", name)).val(data[name]);
-            }
+        $.ajax({
+            url: "/buy",
+            type: "post",
+            dataType: "html",
+            data: {
+                userId: userId
+            },
+            success: function(result) {
+                var data = JSON.parse(result);
+                console.log(data);
+                for (var name in data) {
+                    $(sprintf("input[name='%s']", name)).val(data[name]);
+                }
+
+                $("#formCreditCard").submit();
+            },
         });
+    }
+
+    function connectToServer() {
+        var wsuri = "ws://{{.IP}}:80/WS";
+        sock = new WebSocket(wsuri);
+
+        sock.onopen = function() {
+            console.log("connected to " + wsuri);
+        };
+
+        sock.onclose = function(e) {
+            console.log("connection closed (" + e.code + ")");
+            alert("斷線了，準備重連");
+            location.reload();
+        };
+
+        sock.onmessage = function(e) {
+            console.log(e.data);
+            var packet = JSON.parse(e.data);
+            var c = JSON.parse(packet.content);
+
+            switch (packet.opcode) {
+                case "OP_INIT":
+                    userId = c.userID;
+                    alert(sprintf("you temp ID:%s", userId));
+                    break;
+                case "OP_TRADE_OK":
+                    alert(c.msg + ", TODO: 電子錢包儲值");
+                    break;
+                default:
+                    console.log("unknown packet");
+                    break;
+            }
+        };
     }
     </script>
 </head>
 
 <body>
+    <button type="button" value="Go" onclick="test();">購買100SLT</button>
     <div id="account"></div>
     <div id="currentBlock"></div>
     <br/>
@@ -755,9 +804,8 @@
             <button id="tradeDialogConfirm" type="button">trade</button>
         </div>
     </div>
-    <button type="button" value="Go" onclick="test();">Test</button>
-    <div>
-        <form id="formCreditCard" method="post" accept-charset="UTF-8" action="https://payment-stage.allpay.com.tw/Cashier/AioCheckOut/V4">
+    <div hidden=true>
+        <form id="formCreditCard" method="post" accept-charset="UTF-8" action="https://payment-stage.allpay.com.tw/Cashier/AioCheckOut/V4" target="_blank">
             MerchantID 商店代號:
             <input type="text" name="MerchantID" value="2000132" />
             <br /> MerchantTradeNo 商店交易編號:
@@ -791,7 +839,6 @@
             <br /> CheckMacValue 檢查碼:
             <input type="text" name="CheckMacValue" value="72CF507EF67364245B143A5C52D24018B431322B82FB10E2548676CC385BF59E" />
             <br />
-            <input type="submit" value="送出訂單" />
         </form>
     </div>
 </body>
