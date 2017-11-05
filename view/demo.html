@@ -23,7 +23,6 @@
         web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
     }
 
-    var ethAddress = '0x0000000000000000000000000000000000000000';
     var sttw = new web3.eth.Contract(sttwABI, sttwAddress);
     var sttwStore = new web3.eth.Contract(sttwStoreABI, sttwStoreAddress);
     var sntw1 = new web3.eth.Contract(sntwABI, sntwAddress1);
@@ -272,10 +271,6 @@
                     $("#sntwInWallet3").text(sprintf("SNTW3 in wallet: %s", web3.utils.fromWei(r, 'ether')));
                 });
 
-                solaExchange.methods.balanceOf(ethAddress, account).call().then(function(r) {
-                    $("#ethInSolaExchange").text(sprintf("ETH in SolaExchange: %s", web3.utils.fromWei(r, 'ether')));
-                });
-
                 solaExchange.methods.balanceOf(sttwAddress, account).call().then(function(r) {
                     $("#sttwInSolaExchange").text(sprintf("STTW in SolaExchange: %s", web3.utils.fromWei(r, 'ether')));
                 });
@@ -342,19 +337,7 @@
             console.log(allProject);
         });
     }
-/*
-    function btnDeposit() {
-        var v = $("#ethToken").val();
-        solaExchange.methods.deposit().send({ from: account, value: web3.utils.toWei(v, 'ether') })
-            .then(console.log);
-    }
 
-    function btnWithdraw() {
-        var v = $("#ethToken").val();
-        solaExchange.methods.withdraw(web3.utils.toWei(v, 'ether')).send({ from: account })
-            .then(console.log);
-    }
-*/
     function btnApprove() {
         var token = $("#token").val();
         var tokenContract;
@@ -744,7 +727,6 @@
                     if (rv.user == account) {
                         $("#myTransferTo tr:last").after(sprintf("<tr style='background: lightgrey'><td>%s</td><td>%s</td><td>%s</td></tr>", token, amount, rv.receiver));
                     }
-                    //TODO:myTransferTo
                 }
             });
     }
@@ -816,16 +798,11 @@
     <div id="sntwInWallet2"></div>
     <div id="sntwInWallet3"></div>
     <br/>
-    <div id="ethInSolaExchange"></div>
     <div id="sttwInSolaExchange"></div>
     <div id="sntwInSolaExchange1"></div>
     <div id="sntwInSolaExchange2"></div>
     <div id="sntwInSolaExchange3"></div>
     <hr/>
-    <!--input id="ethToken" type="number" value=0></input>
-    <button type="button" onclick="btnDeposit()">deposit ETH</button>
-    <button type="button" onclick="btnWithdraw()">withdraw ETH</button>
-    <hr/-->
     <select id="token">
         <option value="0">STTW</option>
         <option value="1">SNTW1</option>
