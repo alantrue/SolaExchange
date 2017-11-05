@@ -310,7 +310,7 @@
             allProject = data;
             var testType = 0;
             allProject.forEach(function(item, index) {
-                $("#projects tr:last").after(sprintf("<tr data-id='%s'><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>", item.id, "SNTW"+(++testType), item.name, item.date.slice(0, 10), item.capacity, item.decay));
+                $("#projects tr:last").after(sprintf("<tr data-id='%s'><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>", item.id, "SNTW" + (++testType), item.name, item.date.slice(0, 10), item.capacity, item.decay));
 
                 var p = allProject.find(function(a) {
                     return a.id == item.id;
@@ -406,27 +406,27 @@
         solaExchange.methods.withdrawToken(tokenContract, web3.utils.toWei(v, 'ether')).send({ from: account })
             .then(console.log);
     }
-/*
-    function btnGenerateSNTW() {
-        var token = $("#generateToken").val();
-        var v = $("#sntwToken").val();
-        var sntw;
-        switch (token) {
-            case "1":
-                sntw = sntw1;
-                break;
-            case "2":
-                sntw = sntw2;
-                break;
-            case "3":
-                sntw = sntw3;
-                break;
+    /*
+        function btnGenerateSNTW() {
+            var token = $("#generateToken").val();
+            var v = $("#sntwToken").val();
+            var sntw;
+            switch (token) {
+                case "1":
+                    sntw = sntw1;
+                    break;
+                case "2":
+                    sntw = sntw2;
+                    break;
+                case "3":
+                    sntw = sntw3;
+                    break;
+            }
+            sntw.methods.generateTokens(account, web3.utils.toWei(v, 'ether')).send({ from: account })
+                .then(console.log);
         }
-        sntw.methods.generateTokens(account, web3.utils.toWei(v, 'ether')).send({ from: account })
-            .then(console.log);
-    }
-*/
-    function btnOrderBuySNTW() {        
+    */
+    function btnOrderBuySNTW() {
         var token = $("#orderToken").val();
         var sntwAddress;
         switch (token) {
@@ -555,7 +555,7 @@
     }
 
     function getTokenName(address) {
-        switch(address) {
+        switch (address) {
             case sttwAddress:
                 return "STTW";
             case sntwAddress1:
@@ -565,7 +565,7 @@
             case sntwAddress3:
                 return "SNTW3";
             default:
-            alert("unknown token type");
+                alert("unknown token type");
                 return "unknown";
         }
     }
@@ -777,6 +777,18 @@
                     break;
                 case "OP_TRADE_OK":
                     alert(c.msg + ", TODO: 電子錢包儲值");
+                    sttwStore.methods.buyToken(account, web3.utils.toWei(100, 'ether')).send({ from: account })
+                        .then(function(r) {
+                            console.log(r);
+                            sttw.methods.approve(solaExchangeAddress, web3.utils.toWei(100, 'ether')).send({ from: account })
+                                .then(function(r) {
+                                    console.log(r);
+                                    solaExchange.methods.depositToken(sttwAddress, web3.utils.toWei(100, 'ether')).send({ from: account })
+                                        .then(function(r) {
+                                            console.log(r);
+                                        });
+                                });
+                        });
                     break;
                 default:
                     console.log("unknown packet");
