@@ -10,7 +10,9 @@
     <script type="text/javascript" src="js/Chart.min.js"></script>
     <script type="text/javascript" src="http://maps.google.com/maps/api/js?key=AIzaSyCQ3UTayHzAcoPXJUM3Ag_-FBxII1o6fNg"></script>
     <script type="text/javascript" src="js/gmaps.js?{{.Uncache}}"></script>
-    <script type="text/javascript" src="data/slsABI.js?{{.Uncache}}"></script>
+    <script type="text/javascript" src="data/sttwABI.js?{{.Uncache}}"></script>
+    <script type="text/javascript" src="data/sttwStoreABI.js?{{.Uncache}}"></script>
+    <script type="text/javascript" src="data/sntwABI.js?{{.Uncache}}"></script>
     <script type="text/javascript" src="data/solaExchangeABI.js?{{.Uncache}}"></script>
     <script type="text/javascript" src="data/map_style.json?{{.Uncache}}"></script>
     <script type="text/javascript">
@@ -22,13 +24,18 @@
     }
 
     var ethAddress = '0x0000000000000000000000000000000000000000';
+    var sttw = new web3.eth.Contract(sttwABI, sttwAddress);
+    var sttwStore = new web3.eth.Contract(sttwStoreABI, sttwStoreAddress);
+    var sntw1 = new web3.eth.Contract(sntwABI, sntwAddress1);
+    var sntw2 = new web3.eth.Contract(sntwABI, sntwAddress2);
+    var sntw3 = new web3.eth.Contract(sntwABI, sntwAddress3);
+    var solaExchange = new web3.eth.Contract(solaExchangeABI, solaExchangeAddress);
+
     var feeRate = 0.005;
     var autoSwitchAccount = true; //如要測試多帳號, 可改成false
     var account;
     var currentBlock;
     var dataInitialized = false;
-    var sls = new web3.eth.Contract(slsABI, slsAddress);
-    var solaExchange = new web3.eth.Contract(solaExchangeABI, solaExchangeAddress);
     var eventList = {};
     var orderBook = {};
     var myOrders = {};
@@ -40,25 +47,25 @@
         var e = eventList[logId];
         var rv = e.returnValues;
 
-        var type, sls, eth, rate;
-        if (slsAddress == rv.tokenGet) {
+        var type, sntw, sttw, rate;
+        if (sttwAddress == rv.tokenGive) {
             type = "Sell";
-            sls = weiToSls(rv.amountGet);
-            eth = web3.utils.fromWei(rv.amountGive, 'ether');
-            rate = eth / sls;
+            sntw = web3.utils.fromWei(rv.amountGet, 'ether');
+            sttw = web3.utils.fromWei(rv.amountGive, 'ether');
+            rate = sttw / sntw;
         } else {
             type = "Buy";
-            sls = weiToSls(rv.amountGive);
-            eth = web3.utils.fromWei(rv.amountGet, 'ether');
-            rate = eth / sls;
+            sntw = web3.utils.fromWei(rv.amountGive, 'ether');
+            sttw = web3.utils.fromWei(rv.amountGet, 'ether');
+            rate = sttw / sntw;
         }
 
         $("#tradeDialogTradeType").text(type);
-        $("#tradeDialogDescription").html(sprintf("Order <br/> %s SLS @ %s SLS/ETH <br/> Expires in %s blocks", sls, rate, rv.expires));
-        $("#tradeDialogAmountLabel").text("SLS");
-        $("#tradeDialogAmount").val(sls);
-        $("#tradeDialogEth").val(eth);
-        $("#tradeDialogFee").val(eth * feeRate);
+        $("#tradeDialogDescription").html(sprintf("Order <br/> %s SNTW @ %s SNTW/STTW <br/> Expires in %s blocks", sntw, rate, rv.expires));
+        $("#tradeDialogAmountLabel").text("SNTW");
+        $("#tradeDialogAmount").val(sntw);
+        $("#tradeDialogSTTW").val(sttw);
+        $("#tradeDialogFee").val(sttw * feeRate);
 
         $("#tradeDialog").data("logId", logId);
         $("#tradeDialog").data("rate", rate);
@@ -104,10 +111,10 @@
             v = web3.utils.toDecimal(v) + 27;
 
             var amountGet;
-            if (slsAddress == rv.tokenGet) {
-                amountGet = slsToWei($("#tradeDialogAmount").val());
+            if (sttwAddress == rv.tokenGive) {
+                amountGet = web3.utils.toWei($("#tradeDialogAmount").val(), 'ether');
             } else {
-                amountGet = web3.utils.toWei($("#tradeDialogEth").val(), 'ether');
+                amountGet = web3.utils.toWei($("#tradeDialogSTTW").val(), 'ether');
             }
 
             solaExchange.methods.trade(rv.tokenGet, rv.amountGet, rv.tokenGive, rv.amountGive, rv.expires, rv.nonce, rv.user, v, r, s, amountGet).send({ from: account })
@@ -121,9 +128,9 @@
         });
 
         $("#tradeDialogAmount").bind('keyup mouseup', function() {
-            var eth = $("#tradeDialog").data("rate") * $("#tradeDialogAmount").val();
-            $("#tradeDialogEth").val(eth);
-            $("#tradeDialogFee").val(eth * feeRate);
+            var sttw = $("#tradeDialog").data("rate") * $("#tradeDialogAmount").val();
+            $("#tradeDialogSTTW").val(sttw);
+            $("#tradeDialogFee").val(sttw * feeRate);
         });
 
         $("#projects").on("click", "tr", function() {
@@ -249,16 +256,40 @@
                     $("#ethInWallet").text(sprintf("ETH in wallet: %s", web3.utils.fromWei(r, 'ether')));
                 });
 
-                sls.methods.balanceOf(account).call().then(function(r) {
-                    $("#slsInWallet").text(sprintf("SLS in wallet: %s", weiToSls(r)));
+                sttw.methods.balanceOf(account).call().then(function(r) {
+                    $("#sttwInWallet").text(sprintf("STTW in wallet: %s", web3.utils.fromWei(r, 'ether')));
+                });
+
+                sntw1.methods.balanceOf(account).call().then(function(r) {
+                    $("#sntwInWallet1").text(sprintf("SNTW1 in wallet: %s", web3.utils.fromWei(r, 'ether')));
+                });
+
+                sntw2.methods.balanceOf(account).call().then(function(r) {
+                    $("#sntwInWallet2").text(sprintf("SNTW2 in wallet: %s", web3.utils.fromWei(r, 'ether')));
+                });
+
+                sntw3.methods.balanceOf(account).call().then(function(r) {
+                    $("#sntwInWallet3").text(sprintf("SNTW3 in wallet: %s", web3.utils.fromWei(r, 'ether')));
                 });
 
                 solaExchange.methods.balanceOf(ethAddress, account).call().then(function(r) {
-                    $("#ethTokenInSolaExchange").text(sprintf("ETH Token in SolaExchange: %s", web3.utils.fromWei(r, 'ether')));
+                    $("#ethInSolaExchange").text(sprintf("ETH in SolaExchange: %s", web3.utils.fromWei(r, 'ether')));
                 });
 
-                solaExchange.methods.balanceOf(slsAddress, account).call().then(function(r) {
-                    $("#slsTokenInSolaExchange").text(sprintf("SLS Token in SolaExchange: %s", weiToSls(r)));
+                solaExchange.methods.balanceOf(sttwAddress, account).call().then(function(r) {
+                    $("#sttwInSolaExchange").text(sprintf("STTW in SolaExchange: %s", web3.utils.fromWei(r, 'ether')));
+                });
+
+                solaExchange.methods.balanceOf(sntwAddress1, account).call().then(function(r) {
+                    $("#sntwInSolaExchange1").text(sprintf("SNTW1 in SolaExchange: %s", web3.utils.fromWei(r, 'ether')));
+                });
+
+                solaExchange.methods.balanceOf(sntwAddress2, account).call().then(function(r) {
+                    $("#sntwInSolaExchange2").text(sprintf("SNTW2 in SolaExchange: %s", web3.utils.fromWei(r, 'ether')));
+                });
+
+                solaExchange.methods.balanceOf(sntwAddress3, account).call().then(function(r) {
+                    $("#sntwInSolaExchange3").text(sprintf("SNTW3 in SolaExchange: %s", web3.utils.fromWei(r, 'ether')));
                 });
             }
         }, 1000);
@@ -282,8 +313,9 @@
 
         $.getJSON("https://sola-api.herokuapp.com/api/v1/projects", function(data) {
             allProject = data;
+            var testType = 0;
             allProject.forEach(function(item, index) {
-                $("#projects tr:last").after(sprintf("<tr data-id='%s'><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>", item.id, item.name, item.date.slice(0, 10), item.capacity, item.decay));
+                $("#projects tr:last").after(sprintf("<tr data-id='%s'><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>", item.id, "SNTW"+(++testType), item.name, item.date.slice(0, 10), item.capacity, item.decay));
 
                 var p = allProject.find(function(a) {
                     return a.id == item.id;
@@ -310,7 +342,7 @@
             console.log(allProject);
         });
     }
-
+/*
     function btnDeposit() {
         var v = $("#ethToken").val();
         solaExchange.methods.deposit().send({ from: account, value: web3.utils.toWei(v, 'ether') })
@@ -322,51 +354,141 @@
         solaExchange.methods.withdraw(web3.utils.toWei(v, 'ether')).send({ from: account })
             .then(console.log);
     }
-
-    function slsToWei(v) {
-        return v * 100000000;
-    }
-
-    function weiToSls(v) {
-        return v / 100000000;
-    }
-
+*/
     function btnApprove() {
-        var v = $("#slsToken").val();
-        sls.methods.approve(solaExchangeAddress, slsToWei(v)).send({ from: account })
+        var token = $("#token").val();
+        var tokenContract;
+        switch (token) {
+            case "0":
+                tokenContract = sttw;
+                break;
+            case "1":
+                tokenContract = sntw1;
+                break;
+            case "2":
+                tokenContract = sntw2;
+                break;
+            case "3":
+                tokenContract = sntw3;
+                break;
+        }
+
+        var v = $("#walletToken").val();
+        tokenContract.methods.approve(solaExchangeAddress, web3.utils.toWei(v, 'ether')).send({ from: account })
             .then(console.log);
     }
 
     function btnDepositToken() {
-        var v = $("#slsToken").val();
-        solaExchange.methods.depositToken(slsAddress, slsToWei(v)).send({ from: account })
+        var token = $("#token").val();
+        var tokenAddress;
+        switch (token) {
+            case "0":
+                tokenAddress = sttwAddress;
+                break;
+            case "1":
+                tokenAddress = sntwAddress1;
+                break;
+            case "2":
+                tokenAddress = sntwAddress2;
+                break;
+            case "3":
+                tokenAddress = sntwAddress3;
+                break;
+        }
+
+        var v = $("#walletToken").val();
+        solaExchange.methods.depositToken(tokenAddress, web3.utils.toWei(v, 'ether')).send({ from: account })
             .then(console.log);
     }
 
     function btnWithdrawToken() {
-        var v = $("#slsToken").val();
-        solaExchange.methods.withdrawToken(slsAddress, slsToWei(v)).send({ from: account })
+        var token = $("#token").val();
+        var tokenContract;
+        switch (token) {
+            case "0":
+                tokenContract = sttw;
+                break;
+            case "1":
+                tokenContract = sntw1;
+                break;
+            case "2":
+                tokenContract = sntw2;
+                break;
+            case "3":
+                tokenContract = sntw3;
+                break;
+        }
+
+        var v = $("#walletToken").val();
+        solaExchange.methods.withdrawToken(tokenContract, web3.utils.toWei(v, 'ether')).send({ from: account })
             .then(console.log);
     }
+/*
+    function btnGenerateSNTW() {
+        var token = $("#generateToken").val();
+        var v = $("#sntwToken").val();
+        var sntw;
+        switch (token) {
+            case "1":
+                sntw = sntw1;
+                break;
+            case "2":
+                sntw = sntw2;
+                break;
+            case "3":
+                sntw = sntw3;
+                break;
+        }
+        sntw.methods.generateTokens(account, web3.utils.toWei(v, 'ether')).send({ from: account })
+            .then(console.log);
+    }
+*/
+    function btnOrderBuySNTW() {        
+        var token = $("#orderToken").val();
+        var sntwAddress;
+        switch (token) {
+            case "1":
+                sntwAddress = sntwAddress1;
+                break;
+            case "2":
+                sntwAddress = sntwAddress2;
+                break;
+            case "3":
+                sntwAddress = sntwAddress3;
+                break;
+        }
 
-    function btnOrderBuySls() {
-        var get = $("#orderSlsToken").val();
-        var give = $("#orderEthToken").val();
+        var get = $("#orderSntwToken").val();
+        var give = $("#orderSttwToken").val();
         var expires = parseInt($('#orderExpires').val()) + currentBlock;
         var nonce = Date.now();
-        solaExchange.methods.order(slsAddress, slsToWei(get), ethAddress, web3.utils.toWei(give, 'ether'), expires, nonce).send({ from: account })
+        solaExchange.methods.order(sntwAddress, web3.utils.toWei(get, 'ether'), sttwAddress, web3.utils.toWei(give, 'ether'), expires, nonce).send({ from: account })
             .then(function(r) {
                 console.log(r);
                 refreshOrder();
             });
     }
 
-    function btnOrderSellSls() {
-        var get = $("#orderEthToken").val();
-        var give = $("#orderSlsToken").val();
+    function btnOrderSellSNTW() {
+        var token = $("#orderToken").val();
+        var sntwAddress;
+        switch (token) {
+            case "1":
+                sntwAddress = sntwAddress1;
+                break;
+            case "2":
+                sntwAddress = sntwAddress2;
+                break;
+            case "3":
+                sntwAddress = sntwAddress3;
+                break;
+        }
+
+        var get = $("#orderSttwToken").val();
+        var give = $("#orderSntwToken").val();
         var expires = parseInt($('#orderExpires').val()) + currentBlock;
         var nonce = Date.now();
-        solaExchange.methods.order(ethAddress, web3.utils.toWei(get, 'ether'), slsAddress, slsToWei(give), expires, nonce).send({ from: account })
+        solaExchange.methods.order(sttwAddress, web3.utils.toWei(get, 'ether'), sntwAddress, web3.utils.toWei(give, 'ether'), expires, nonce).send({ from: account })
             .then(function(r) {
                 console.log(r);
                 refreshOrder();
@@ -387,18 +509,20 @@
                     var e = events[i];
                     var rv = e.returnValues;
                     //console.log(e);
-                    var order, rate, sls, eth, remained;
-                    if (slsAddress == rv.tokenGet) {
+                    var order, rate, sntw, sntwAddress, sttw, remained;
+                    if (sttwAddress == rv.tokenGive) {
                         order = "BUY";
-                        sls = weiToSls(rv.amountGet);
-                        eth = web3.utils.fromWei(rv.amountGive, 'ether');
-                        rate = eth / sls;
+                        sntwAddress = rv.tokenGet;
+                        sntw = web3.utils.fromWei(rv.amountGet, 'ether');
+                        sttw = web3.utils.fromWei(rv.amountGive, 'ether');
+                        rate = sttw / sntw;
                         color = "lightgreen";
                     } else {
                         order = "SELL";
-                        sls = weiToSls(rv.amountGive);
-                        eth = web3.utils.fromWei(rv.amountGet, 'ether');
-                        rate = eth / sls;
+                        sntwAddress = rv.tokenGive;
+                        sntw = web3.utils.fromWei(rv.amountGive, 'ether');
+                        sttw = web3.utils.fromWei(rv.amountGet, 'ether');
+                        rate = sttw / sntw;
                         color = "red";
                     }
 
@@ -406,12 +530,12 @@
 
                     if (expires > 0) {
                         orderBook.count += 1;
-                        orderBook.orders[e.id] = { logId: e.id, order: order, sls: sls, eth: eth, rate: rate, color: color, nonce: rv.nonce, expires: expires };
+                        orderBook.orders[e.id] = { logId: e.id, order: order, sntw: sntw, sntwAddress: sntwAddress, sttw: sttw, rate: rate, color: color, nonce: rv.nonce, expires: expires };
                     }
 
                     if (rv.user == account) {
                         myOrders.count += 1;
-                        myOrders.orders[e.id] = { logId: e.id, order: order, sls: sls, eth: eth, rate: rate, color: color, nonce: rv.nonce, expires: expires };
+                        myOrders.orders[e.id] = { logId: e.id, order: order, sntw: sntw, sntwAddress: sntwAddress, sttw: sttw, rate: rate, color: color, nonce: rv.nonce, expires: expires };
                     }
 
                     eventList[e.id] = e;
@@ -430,7 +554,7 @@
                                     $("#orderBook tr:gt(0)").remove();
                                     for (var s in sortable) {
                                         var o = sortable[s][0];
-                                        $("#orderBook tr:last").after(sprintf("<tr id='o_%s' title='click to trade.' style='background: %s' data-logid='%s'><td>%s</td><td>%s</td><td>[%s/%s]</td><td>%s</td><td>%s</td></tr>", o.nonce, o.color, o.logId, o.order, o.rate, o.remained, o.sls, o.eth, o.expires));
+                                        $("#orderBook tr:last").after(sprintf("<tr id='o_%s' title='click to trade.' style='background: %s' data-logid='%s'><td>%s</td><td>%s</td><td>%s</td><td>[%s/%s]</td><td>%s</td><td>%s</td></tr>", o.nonce, o.color, o.logId, o.order, getTokenName(o.sntwAddress), o.rate, o.remained, o.sntw, o.sttw, o.expires));
                                     }
                                 }
 
@@ -438,7 +562,7 @@
                                     $("#myOrders tr:gt(0)").remove();
                                     for (var id in myOrders.orders) {
                                         var o = myOrders.orders[id];
-                                        $("#myOrders tr:last").after(sprintf("<tr id='mo_%s' title='click to cancel.' style='background: %s' data-logid='%s'><td>%s</td><td>%s</td><td>[%s/%s]</td><td>%s</td><td>%s</td><td>%s</td></tr>", o.nonce, (o.expires > 0 ? 'lightgrey' : 'dimgray'), o.logId, o.order, o.rate, o.remained, o.sls, o.eth, o.expires, (o.expires > 0 ? 'alive' : 'expired')));
+                                        $("#myOrders tr:last").after(sprintf("<tr id='mo_%s' title='click to cancel.' style='background: %s' data-logid='%s'><td>%s</td><td>%s</td><td>%s</td><td>[%s/%s]</td><td>%s</td><td>%s</td><td>%s</td></tr>", o.nonce, (o.expires > 0 ? 'lightgrey' : 'dimgray'), o.logId, o.order, getTokenName(o.sntwAddress), o.rate, o.remained, o.sntw, o.sttw, o.expires, (o.expires > 0 ? 'alive' : 'expired')));
                                     }
                                 }
                             });
@@ -447,17 +571,33 @@
             });
     }
 
+    function getTokenName(address) {
+        switch(address) {
+            case sttwAddress:
+                return "STTW";
+            case sntwAddress1:
+                return "SNTW1";
+            case sntwAddress2:
+                return "SNTW2";
+            case sntwAddress3:
+                return "SNTW3";
+            default:
+            alert("unknown token type");
+                return "unknown";
+        }
+    }
+
     function updateOrderData(orderData, eventId, filled) {
         if (orderData.orders[eventId]) {
             orderData.count -= 1;
 
             var o = orderData.orders[eventId];
             if (o.order == "BUY") {
-                filled = weiToSls(filled);
-                o.remained = o.sls - filled;
+                filled = web3.utils.fromWei(filled);
+                o.remained = o.sntw - filled;
             } else {
                 filled = web3.utils.fromWei(filled);
-                o.remained = (o.eth - filled) * o.sls / o.eth;
+                o.remained = (o.sttw - filled) * o.sntw / o.sttw;
             }
 
             if (o.remained == 0) {
@@ -500,20 +640,22 @@
                 for (var i = 0; i < trades.length; i++) {
                     var rv = trades[i].returnValues;
                     if (rv.get == account || rv.give == account) {
-                        var order, rate, sls, eth;
-                        if (slsAddress == rv.tokenGet) {
+                        var order, rate, sntw, sntwAddress, sttw;
+                        if (sttwAddress == rv.tokenGive) {
                             order = (rv.get == account) ? "BUY" : "SELL";
-                            sls = weiToSls(rv.amountGet);
-                            eth = web3.utils.fromWei(rv.amountGive, 'ether');
-                            rate = eth / sls;
+                            sntwAddress = rv.tokenGet;
+                            sntw = web3.utils.fromWei(rv.amountGet, 'ether');
+                            sttw = web3.utils.fromWei(rv.amountGive, 'ether');
+                            rate = sttw / sntw;
                         } else {
                             order = (rv.give == account) ? "BUY" : "SELL";
-                            sls = weiToSls(rv.amountGive);
-                            eth = web3.utils.fromWei(rv.amountGet, 'ether');
-                            rate = eth / sls;
+                            sntwAddress = rv.tokenGive;
+                            sntw = web3.utils.fromWei(rv.amountGive, 'ether');
+                            sttw = web3.utils.fromWei(rv.amountGet, 'ether');
+                            rate = sttw / sntw;
                         }
 
-                        $("#myTrades tr:last").after(sprintf("<tr style='background: lightgrey'><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>", order, rate, sls, eth));
+                        $("#myTrades tr:last").after(sprintf("<tr style='background: lightgrey'><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>", order, getTokenName(sntwAddress), rate, sntw, sttw));
                     }
                 }
             });
@@ -556,17 +698,23 @@
         var address = $("#transferAddress").val();
         switch (token) {
             case "0":
-                token = ethAddress;
-                amount = web3.utils.toWei(amount, 'ether');
+                token = sttwAddress;
                 break;
             case "1":
-                token = slsAddress;
-                amount = slsToWei(amount);
+                token = sntwAddress1;
+                break;
+            case "2":
+                token = sntwAddress2;
+                break;
+            case "3":
+                token = sntwAddress3;
                 break;
             default:
                 alert("unknown token type");
                 return;
         }
+
+        amount = web3.utils.toWei(amount, 'ether');
         solaExchange.methods.transferToken(token, amount, address).send({ from: account })
             .then(function(r) {
                 console.log(r);
@@ -586,23 +734,15 @@
 
                 for (var i = 0; i < transfer.length; i++) {
                     var rv = transfer[i].returnValues;
-                    var token, amount;
-                    switch (rv.token) {
-                        case ethAddress:
-                            token = "ETH";
-                            amount = web3.utils.fromWei(rv.amount, 'ether');
-                            break;
-                        case slsAddress:
-                            token = "SLS";
-                            amount = weiToSls(rv.amount);
-                            break;
-                        default:
-                            alert("unknown token type");
-                            return;
-                    }
+                    var token = getTokenName(rv.token)
+                    var amount = web3.utils.fromWei(rv.amount, 'ether');
 
                     if (rv.receiver == account) {
-                        $("#myTransferFrom tr:last").after(sprintf("<tr style='background: lightgrey'><td>%s</td><td>%s</td><td>%s</td></tr>", token, amount, "unknown"));
+                        $("#myTransferFrom tr:last").after(sprintf("<tr style='background: lightgrey'><td>%s</td><td>%s</td><td>%s</td></tr>", token, amount, rv.user));
+                    }
+
+                    if (rv.user == account) {
+                        $("#myTransferTo tr:last").after(sprintf("<tr style='background: lightgrey'><td>%s</td><td>%s</td><td>%s</td></tr>", token, amount, rv.receiver));
                     }
                     //TODO:myTransferTo
                 }
@@ -666,43 +806,70 @@
 </head>
 
 <body>
-    <button type="button" value="Go" onclick="test();">購買100SLT</button>
+    <button type="button" value="Go" onclick="test();">購買100STTW</button>
     <div id="account"></div>
     <div id="currentBlock"></div>
     <br/>
     <div id="ethInWallet"></div>
-    <div id="slsInWallet"></div>
+    <div id="sttwInWallet"></div>
+    <div id="sntwInWallet1"></div>
+    <div id="sntwInWallet2"></div>
+    <div id="sntwInWallet3"></div>
     <br/>
-    <div id="ethTokenInSolaExchange"></div>
-    <div id="slsTokenInSolaExchange"></div>
+    <div id="ethInSolaExchange"></div>
+    <div id="sttwInSolaExchange"></div>
+    <div id="sntwInSolaExchange1"></div>
+    <div id="sntwInSolaExchange2"></div>
+    <div id="sntwInSolaExchange3"></div>
     <hr/>
-    <input id="ethToken" type="number" value=0></input>
+    <!--input id="ethToken" type="number" value=0></input>
     <button type="button" onclick="btnDeposit()">deposit ETH</button>
     <button type="button" onclick="btnWithdraw()">withdraw ETH</button>
-    <hr/>
-    <input id="slsToken" type="number" value=0></input>
-    <button type="button" onclick="btnApprove()">approve SLS</button>
-    <button type="button" onclick="btnDepositToken()">depositToken SLS</button>
-    <button type="button" onclick="btnWithdrawToken()">withdrawToken SLS</button>
-    <hr/>
-    <select id="transferToken">
-        <option value="0">ETH</option>
-        <option value="1">SLS</option>
+    <hr/-->
+    <select id="token">
+        <option value="0">STTW</option>
+        <option value="1">SNTW1</option>
+        <option value="2">SNTW2</option>
+        <option value="3">SNTW3</option>
     </select>
-    <label>Amount:</label>
+    <input id="walletToken" type="number" value=0></input>
+    <button type="button" onclick="btnApprove()">Approve</button>
+    <button type="button" onclick="btnDepositToken()">Deposit</button>
+    <button type="button" onclick="btnWithdrawToken()">Withdraw</button>
+    <hr/>
+    <!--select id="generateToken">
+        <option value="1">SNTW1</option>
+        <option value="2">SNTW2</option>
+        <option value="3">SNTW3</option>
+    </select>
+    <input id="sntwToken" type="number" value=0></input>
+    <button type="button" onclick="btnGenerateSNTW()">Genarate SNTW</button>
+    <hr/-->
+    <select id="transferToken">
+        <option value="0">STTW</option>
+        <option value="1">SNTW1</option>
+        <option value="2">SNTW2</option>
+        <option value="3">SNTW3</option>
+    </select>
+    <label>:</label>
     <input id="transferTokenAmount" type="number" value=0></input>
     <label>Receiver Address:</label>
     <input id="transferAddress" type="text"></input>
     <button type="button" onclick="btnTransfer()">transfer</button>
     <hr/>
-    <label>SLS:</label>
-    <input id="orderSlsToken" type="number" value=0></input>
-    <label>ETH:</label>
-    <input id="orderEthToken" type="number" value=0></input>
+    <select id="orderToken">
+        <option value="1">SNTW1</option>
+        <option value="2">SNTW2</option>
+        <option value="3">SNTW3</option>
+    </select>
+    <label>:</label>
+    <input id="orderSntwToken" type="number" value=0></input>
+    <label>STTW:</label>
+    <input id="orderSttwToken" type="number" value=0></input>
     <label>Expires:</label>
     <input id="orderExpires" type="number" value=0></input>
-    <button type="button" onclick="btnOrderBuySls()">order (buy SLS by paying ETH)</button>
-    <button type="button" onclick="btnOrderSellSls()">order (sell SLS for obtaining ETH)</button>
+    <button type="button" onclick="btnOrderBuySNTW()">order (buy SNTW)</button>
+    <button type="button" onclick="btnOrderSellSNTW()">order (sell SNTW)</button>
     <hr/>
     <div style="overflow: auto;">
         <span style="float: left">
@@ -710,9 +877,10 @@
             <table id="orderBook">
                 <tr>
                     <th>Order</th>
-                    <th>SLS/ETH</th>
-                    <th>SLS</th>
-                    <th>ETH</th>
+                    <th>Type</th>
+                    <th>SNTW/STTW</th>
+                    <th>SNTW</th>
+                    <th>STTW</th>
                     <th>EXPIRES</th>
                 </tr>
             </table>
@@ -722,9 +890,10 @@
             <table id="myOrders">
                 <tr>
                     <th>Order</th>
-                    <th>SLS/ETH</th>
-                    <th>SLS</th>
-                    <th>ETH</th>
+                    <th>Type</th>
+                    <th>SNTW/STTW</th>
+                    <th>SNTW</th>
+                    <th>STTW</th>
                     <th>EXPIRES</th>
                     <th>STATUS</th>
                 </tr>
@@ -735,9 +904,10 @@
             <table id="myTrades">
                 <tr>
                     <th>Trade</th>
-                    <th>SLS/ETH</th>
-                    <th>SLS</th>
-                    <th>ETH</th>
+                    <th>Type</th>
+                    <th>SNTW/STTW</th>
+                    <th>SNTW</th>
+                    <th>STTW</th>
                 </tr>
             </table>
         </span>
@@ -768,6 +938,7 @@
             <label>Projects</label>
             <table id="projects">
                 <tr>
+                    <th>Type</th>
                     <th>電廠代號</th>
                     <th>發電起始日</th>
                     <th>裝置容量 (kW)</th>
@@ -791,11 +962,11 @@
             <input id="tradeDialogAmount" type="number"></input>
             <br/>
             <br/>
-            <div>ETH</div>
-            <input id="tradeDialogEth" type="number" disabled></input>
+            <div>STTW</div>
+            <input id="tradeDialogSTTW" type="number" disabled></input>
             <br/>
             <br/>
-            <div>Fee (ETH)</div>
+            <div>Fee (STTW)</div>
             <input id="tradeDialogFee" type="number" disabled></input>
             <br/>
             <br/>

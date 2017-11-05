@@ -2,11 +2,54 @@ pragma solidity ^0.4.15;
 
 import "./SafeMath.sol";
 import "./Ownable.sol";
-import "./MiniMeToken.sol";
+import "./STTW.sol";
+
+interface ERC20Token {
+  /// @return total amount of tokens
+  function totalSupply() constant returns (uint);
+
+  /// @param _owner The address from which the balance will be retrieved
+  /// @return The balance
+  function balanceOf(address _owner) constant returns (uint256 balance);
+
+  /// @notice send `_value` token to `_to` from `msg.sender`
+  /// @param _to The address of the recipient
+  /// @param _amount The amount of token to be transferred
+  /// @return Whether the transfer was successful or not
+  function transfer(address _to, uint256 _amount) returns (bool success);
+
+  /// @notice send `_value` token to `_to` from `_from` on the condition it is approved by `_from`
+  /// @param _from The address of the sender
+  /// @param _to The address of the recipient
+  /// @param _amount The amount of token to be transferred
+  /// @return Whether the transfer was successful or not
+  function transferFrom(address _from, address _to, uint256 _amount) returns (bool success);
+
+  /// @notice `msg.sender` approves `_addr` to spend `_value` tokens
+  /// @param _spender The address of the account able to transfer the tokens
+  /// @param _amount The amount of wei to be approved for transfer
+  /// @return Whether the approval was successful or not
+  function approve(address _spender, uint256 _amount) returns (bool success);
+
+  /// @param _owner The address of the account owning tokens
+  /// @param _spender The address of the account able to transfer the tokens
+  /// @return Amount of remaining tokens allowed to spent
+  function allowance(address _owner, address _spender) constant returns (uint256 remaining);
+
+  /// @notice `msg.sender` approves `_spender` to send `_amount` tokens on
+  ///  its behalf, and then a function is triggered in the contract that is
+  ///  being approved, `_spender`. This allows users to use their tokens to
+  ///  interact with contracts in one function call instead of two
+  /// @param _spender The address of the contract able to transfer the tokens
+  /// @param _amount The amount of tokens to be approved for transfer
+  /// @return True if the function call was successful
+  function approveAndCall(address _spender, uint256 _amount, bytes _extraData) returns (bool success);
+}
 
 contract SolaExchange is Ownable {
   using SafeMath for uint;
 
+  STTW public basicToken;
   address public feeAccount; //the account that will receive fees
   uint public feeTake; // thousandth
   mapping(address => bool) public tokensAllowed; // tokens which can be trade here
@@ -19,14 +62,14 @@ contract SolaExchange is Ownable {
   event Trade(address tokenGet, uint amountGet, address tokenGive, uint amountGive, address get, address give);
   event Deposit(address token, address user, uint amount, uint balance);
   event Withdraw(address token, address user, uint amount, uint balance);
-  event Transfer(address token, uint amount, address receiver, uint balance);
+  event Transfer(address token, uint amount, address user, address receiver, uint balance);
 
   modifier nonZeroAddress(address x) {
     require(x != 0x0);
     _;
   }
 
-  modifier notZero(uint x) {
+  modifier nonZero(uint x) {
     require(x > 0);
     _;
   }
@@ -36,10 +79,12 @@ contract SolaExchange is Ownable {
     _;
   }
 
-  function SolaExchange(address _feeAccount, uint _feeTake) nonZeroAddress(_feeAccount) {
+  function SolaExchange(address _basicToken, address _feeAccount, uint _feeTake) nonZeroAddress(_basicToken) nonZeroAddress(_feeAccount) {
+    basicToken = STTW(_basicToken);
     feeAccount = _feeAccount;
     feeTake = _feeTake;
     tokensAllowed[0] = true;
+    tokensAllowed[_basicToken] = true;
   }
 
   function() {
@@ -70,41 +115,41 @@ contract SolaExchange is Ownable {
     Deposit(0, msg.sender, msg.value, tokens[0][msg.sender]);
   }
 
-  function withdraw(uint amount) notZero(amount) {
+  function withdraw(uint amount) nonZero(amount) {
     require(tokens[0][msg.sender] >= amount);
     tokens[0][msg.sender] = tokens[0][msg.sender].sub(amount);
     msg.sender.transfer(amount);
     Withdraw(0, msg.sender, amount, tokens[0][msg.sender]);
   }
 
-  function transfer(uint amount, address receiver) notZero(amount) {
+  function transfer(uint amount, address receiver) nonZero(amount) {
     require(receiver != 0x0);
     require(tokens[0][msg.sender] >= amount);
     tokens[0][msg.sender] = tokens[0][msg.sender].sub(amount);
     tokens[0][receiver] = tokens[0][receiver].add(amount);
-    Transfer(0, amount, receiver, tokens[0][msg.sender]);
+    Transfer(0, amount, msg.sender, receiver, tokens[0][msg.sender]);
   }
 
-  function depositToken(address token, uint amount) nonZeroAddress(token) notZero(amount) needTokenAllowed(token) {
+  function depositToken(address token, uint amount) nonZeroAddress(token) nonZero(amount) needTokenAllowed(token) {
     //remember to call Token(address).approve(this, amount) or this contract will not be able to do the transfer on your behalf.
-    if (!MiniMeToken(token).transferFrom(msg.sender, this, amount)) revert();
+    if (!ERC20Token(token).transferFrom(msg.sender, this, amount)) revert();
     tokens[token][msg.sender] = tokens[token][msg.sender].add(amount);
     Deposit(token, msg.sender, amount, tokens[token][msg.sender]);
   }
 
-  function withdrawToken(address token, uint amount) nonZeroAddress(token) notZero(amount) needTokenAllowed(token) {
+  function withdrawToken(address token, uint amount) nonZeroAddress(token) nonZero(amount) needTokenAllowed(token) {
     require(tokens[token][msg.sender] >= amount);
     tokens[token][msg.sender] = tokens[token][msg.sender].sub(amount);
-    if (!MiniMeToken(token).transfer(msg.sender, amount)) revert();
+    if (!ERC20Token(token).transfer(msg.sender, amount)) revert();
     Withdraw(token, msg.sender, amount, tokens[token][msg.sender]);
   }
 
-  function transferToken(address token, uint amount, address receiver) needTokenAllowed(token) notZero(amount) {
+  function transferToken(address token, uint amount, address receiver) needTokenAllowed(token) nonZero(amount) {
     require(receiver != 0x0);
     require(tokens[token][msg.sender] >= amount);
     tokens[token][msg.sender] = tokens[token][msg.sender].sub(amount);
     tokens[token][receiver] = tokens[token][receiver].add(amount);
-    Transfer(token, amount, receiver, tokens[token][msg.sender]);
+    Transfer(token, amount, msg.sender, receiver, tokens[token][msg.sender]);
   }
 
   function balanceOf(address token, address user) constant returns (uint) {
@@ -112,9 +157,9 @@ contract SolaExchange is Ownable {
   }
 
   function order(address tokenGet, uint amountGet, address tokenGive, uint amountGive, uint expires, uint nonce)
-    notZero(amountGet)
+    nonZero(amountGet)
     needTokenAllowed(tokenGet)
-    notZero(amountGive)
+    nonZero(amountGive)
     needTokenAllowed(tokenGive)
   {
     require(expires > block.number);

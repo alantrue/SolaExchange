@@ -1,5 +1,7 @@
-var slsAddress = '0xf3280F9f08DD5a2fD7Cb3BBE26C717D63e00399d';
-var slsABI = [{
+var sntwAddress1 = "0x032Ba156F7C33a9673075A42A82e798F84165ce1";
+var sntwAddress2 = "0xa562E45EBD26c46Ca8b81242a57910C8B086E4D2";
+var sntwAddress3 = "0x7eCd0De9C6caa29Bd5F66F54385ecda12c4ddC63";
+var sntwABI = [{
         "constant": true,
         "inputs": [],
         "name": "name",
@@ -463,4 +465,4 @@ var slsABI = [{
         "name": "Approval",
         "type": "event"
     }
-]
+];
