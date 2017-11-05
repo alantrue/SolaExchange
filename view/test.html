@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Demo</title>
+    <link rel="stylesheet" type="text/css" href="css/main.css?{{.Uncache}}">
+    <script type="text/javascript" src="js/jquery.js"></script>
+    <script type="text/javascript" src="js/sprintf.js"></script>
+    <script type="text/javascript" src="js/ethers.js?{{.Uncache}}"></script>
+    <script type="text/javascript" src="data/sttwABI.js?{{.Uncache}}"></script>
+    <script type="text/javascript" src="data/sttwStoreABI.js?{{.Uncache}}"></script>
+    <script type="text/javascript" src="data/sntwABI.js?{{.Uncache}}"></script>
+    <script type="text/javascript" src="data/solaExchangeABI.js?{{.Uncache}}"></script>
+    <script type="text/javascript">
+    /*
+        var sttw = new web3.eth.Contract(sttwABI, sttwAddress);
+        var sttwStore = new web3.eth.Contract(sttwStoreABI, sttwStoreAddress);
+        var sntw1 = new web3.eth.Contract(sntwABI, sntwAddress1);
+        var sntw2 = new web3.eth.Contract(sntwABI, sntwAddress2);
+        var sntw3 = new web3.eth.Contract(sntwABI, sntwAddress3);
+        var solaExchange = new web3.eth.Contract(solaExchangeABI, solaExchangeAddress);
+    */
+    $(function() {
+
+        var privateKey = "0x70394e1a35f52536a07c3dc8dbc3b8f9219511130d8bfaa48518dc497ab00bd8";
+        var wallet = new ethers.Wallet(privateKey);
+        var provider = new ethers.providers.getDefaultProvider("kovan");
+
+        provider.getBalance(wallet.address).then((balance) => {
+            var etherString = ethers.utils.formatEther(balance);
+            console.log("etherString:", etherString)
+        });
+
+        var provider = ethers.providers.getDefaultProvider("kovan");
+
+        var address = "0x38f52E3dd42668C1fc90331140a3168bda2518cA";
+
+        provider.getBalance(address).then(function(balance) {
+
+            // balance is a BigNumber (in wei); format is as a sting (in ether)
+            var etherString = ethers.utils.formatEther(balance);
+
+            console.log("Balance: " + etherString);
+        });
+    });
+    </script>
+</head>
+
+<body>
+</body>
+
+</html>

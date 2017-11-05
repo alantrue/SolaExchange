@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -122,6 +121,24 @@ func handlerDemo(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func handlerTest(w http.ResponseWriter, r *http.Request) {
+	t, err := template.ParseFiles("view/test.html")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	data := struct {
+		Uncache string
+	}{
+		Uncache: time.Now().Format("20060102150405"),
+	}
+
+	err = t.Execute(w, data)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
 func createCheck(id, date, returnURL, clientBackURL, itemName, price string) string {
 	form := url.Values{}
 
@@ -186,6 +203,7 @@ func handlerBuy(w http.ResponseWriter, r *http.Request) {
 	packetHandler.Trade(userID, id)
 }
 
+/*
 func handlerTest(w http.ResponseWriter, r *http.Request) {
 	form := url.Values{}
 
@@ -224,7 +242,7 @@ func handlerTest(w http.ResponseWriter, r *http.Request) {
 	w.Write(body)
 
 }
-
+*/
 func getCheckMacValue(form url.Values) string {
 	v := "HashKey=5294y06JbISpM5x9&" + form.Encode() + "&HashIV=v77hoKGq4kWxNNIS"
 	v = strings.ToLower(v)
