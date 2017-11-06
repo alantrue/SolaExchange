@@ -13,40 +13,100 @@
     <script type="text/javascript" src="data/solaExchangeABI.js?{{.Uncache}}"></script>
     <script type="text/javascript">
     /*
-        var sttw = new web3.eth.Contract(sttwABI, sttwAddress);
-        var sttwStore = new web3.eth.Contract(sttwStoreABI, sttwStoreAddress);
-        var sntw1 = new web3.eth.Contract(sntwABI, sntwAddress1);
-        var sntw2 = new web3.eth.Contract(sntwABI, sntwAddress2);
-        var sntw3 = new web3.eth.Contract(sntwABI, sntwAddress3);
-        var solaExchange = new web3.eth.Contract(solaExchangeABI, solaExchangeAddress);
-    */
+            var sttw = new web3.eth.Contract(sttwABI, sttwAddress);
+            var sttwStore = new web3.eth.Contract(sttwStoreABI, sttwStoreAddress);
+            var sntw1 = new web3.eth.Contract(sntwABI, sntwAddress1);
+            var sntw2 = new web3.eth.Contract(sntwABI, sntwAddress2);
+            var sntw3 = new web3.eth.Contract(sntwABI, sntwAddress3);
+            var solaExchange = new web3.eth.Contract(solaExchangeABI, solaExchangeAddress);
+        */
     $(function() {
-
+        var provider = new ethers.providers.JsonRpcProvider('https://kovan.infura.io', true, 42);
         var privateKey = "0x70394e1a35f52536a07c3dc8dbc3b8f9219511130d8bfaa48518dc497ab00bd8";
-        var wallet = new ethers.Wallet(privateKey);
-        var provider = new ethers.providers.getDefaultProvider("kovan");
+        var wallet = new ethers.Wallet(privateKey, provider);
 
-        provider.getBalance(wallet.address).then((balance) => {
-            var etherString = ethers.utils.formatEther(balance);
-            console.log("etherString:", etherString)
+        $("#buy").click(function() {
+            buy(wallet, '100', wallet.address);
         });
 
-        var provider = ethers.providers.getDefaultProvider("kovan");
-
-        var address = "0x38f52E3dd42668C1fc90331140a3168bda2518cA";
-
-        provider.getBalance(address).then(function(balance) {
-
-            // balance is a BigNumber (in wei); format is as a sting (in ether)
-            var etherString = ethers.utils.formatEther(balance);
-
-            console.log("Balance: " + etherString);
+        $("#approve").click(function() {
+            approve(wallet, '100');
         });
+
+        $("#deposit").click(function() {
+            deposit(wallet, '100');
+        });
+
+        function buy(wallet, amount, recevier) {
+            var contract = new ethers.Contract(sttwStoreAddress, sttwStoreABI, wallet);
+            var txid;
+            contract.buyToken(recevier, ethers.utils.parseEther(amount)).then((transaction) => {
+                console.log("buy");
+                console.log(transaction);
+                txid = transaction.hash;
+                return wallet.provider.waitForTransaction(txid)
+            }).then((transaction) => {
+                console.log('Transaction Minded: ' + transaction.hash);
+                console.log(transaction);
+                return wallet.provider.getTransaction(txid);
+            }).then((transaction) => {
+                console.log(transaction);
+                return contract.balanceOf(wallet.address);
+            }).then((result) => {
+                console.log(result);
+                approve(wallet, amount);
+            });
+        }
+
+        function approve(wallet, amount) {
+            var contract = new ethers.Contract(sttwAddress, sttwABI, wallet);
+            var txid;
+            contract.approve(solaExchangeAddress, ethers.utils.parseEther(amount)).then((transaction) => {
+                console.log("approve");
+                console.log(transaction);
+                txid = transaction.hash;
+                return wallet.provider.waitForTransaction(txid)
+            }).then((transaction) => {
+                console.log('Transaction Minded: ' + transaction.hash);
+                console.log(transaction);
+                return wallet.provider.getTransaction(txid);
+            }).then((transaction) => {
+                console.log(transaction);
+                return contract.balanceOf(wallet.address);
+            }).then((result) => {
+                console.log(result);
+                deposit(wallet, amount);
+            });
+        }
+
+        function deposit(wallet, amount) {
+            var contract = new ethers.Contract(solaExchangeAddress, solaExchangeABI, wallet);
+            var txid;
+            contract.depositToken(sttwAddress, ethers.utils.parseEther(amount)).then((transaction) => {
+                console.log("deposit");
+                console.log(transaction);
+                txid = transaction.hash;
+                return wallet.provider.waitForTransaction(txid)
+            }).then((transaction) => {
+                console.log('Transaction Minded: ' + transaction.hash);
+                console.log(transaction);
+                return wallet.provider.getTransaction(txid);
+            }).then((transaction) => {
+                console.log(transaction);
+                return contract.balanceOf(sttwAddress, wallet.address);
+            }).then((result) => {
+                console.log(result);
+            });
+        }
+
     });
     </script>
 </head>
 
 <body>
+    <button id="buy" type="button">buy</button>
+    <button id="approve" type="button">approve</button>
+    <button id="deposit" type="button">deposit</button>
 </body>
 
 </html>

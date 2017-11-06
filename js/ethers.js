@@ -1214,7 +1214,7 @@ var utils = (function() {
 function InfuraProvider(testnet, apiAccessToken) {
     if (!(this instanceof InfuraProvider)) { throw new Error('missing new'); }
 
-    var host = (testnet ? "kovan": "mainnet") + '.infura.io';
+    var host = (testnet ? "ropsten": "mainnet") + '.infura.io';
     var url = 'https://' + host + '/' + (apiAccessToken || '');
 
     JsonRpcProvider.call(this, url, testnet);
