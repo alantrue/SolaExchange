@@ -7,6 +7,7 @@
     <script type="text/javascript" src="js/jquery.js"></script>
     <script type="text/javascript" src="js/sprintf.js"></script>
     <script type="text/javascript" src="js/web3.min.js"></script>
+    <script type="text/javascript" src="js/ethers.js"></script>
     <script type="text/javascript" src="js/Chart.min.js"></script>
     <script type="text/javascript" src="http://maps.google.com/maps/api/js?key=AIzaSyCQ3UTayHzAcoPXJUM3Ag_-FBxII1o6fNg"></script>
     <script type="text/javascript" src="js/gmaps.js?{{.Uncache}}"></script>
@@ -41,6 +42,10 @@
     var allProject;
     var myBar;
     var userId;
+
+    var provider = new ethers.providers.JsonRpcProvider('https://kovan.infura.io', true, 42);
+    var privateKey = "0x70394e1a35f52536a07c3dc8dbc3b8f9219511130d8bfaa48518dc497ab00bd8";
+    var wallet = new ethers.Wallet(privateKey, provider);
 
     function openTradeDialog(logId) {
         var e = eventList[logId];
@@ -751,6 +756,68 @@
         });
     }
 
+    function buy(wallet, amount, recevier) {
+        var contract = new ethers.Contract(sttwStoreAddress, sttwStoreABI, wallet);
+        var txid;
+        contract.buyToken(recevier, ethers.utils.parseEther(amount)).then((transaction) => {
+            console.log("buy");
+            console.log(transaction);
+            txid = transaction.hash;
+            return wallet.provider.waitForTransaction(txid)
+        }).then((transaction) => {
+            console.log('Transaction Minded: ' + transaction.hash);
+            console.log(transaction);
+            return wallet.provider.getTransaction(txid);
+        }).then((transaction) => {
+            console.log(transaction);
+            return contract.balanceOf(wallet.address);
+        }).then((result) => {
+            console.log(result);
+            approve(wallet, amount);
+        });
+    }
+
+    function approve(wallet, amount) {
+        var contract = new ethers.Contract(sttwAddress, sttwABI, wallet);
+        var txid;
+        contract.approve(solaExchangeAddress, ethers.utils.parseEther(amount)).then((transaction) => {
+            console.log("approve");
+            console.log(transaction);
+            txid = transaction.hash;
+            return wallet.provider.waitForTransaction(txid)
+        }).then((transaction) => {
+            console.log('Transaction Minded: ' + transaction.hash);
+            console.log(transaction);
+            return wallet.provider.getTransaction(txid);
+        }).then((transaction) => {
+            console.log(transaction);
+            return contract.balanceOf(wallet.address);
+        }).then((result) => {
+            console.log(result);
+            deposit(wallet, amount);
+        });
+    }
+
+    function deposit(wallet, amount) {
+        var contract = new ethers.Contract(solaExchangeAddress, solaExchangeABI, wallet);
+        var txid;
+        contract.depositToken(sttwAddress, ethers.utils.parseEther(amount)).then((transaction) => {
+            console.log("deposit");
+            console.log(transaction);
+            txid = transaction.hash;
+            return wallet.provider.waitForTransaction(txid)
+        }).then((transaction) => {
+            console.log('Transaction Minded: ' + transaction.hash);
+            console.log(transaction);
+            return wallet.provider.getTransaction(txid);
+        }).then((transaction) => {
+            console.log(transaction);
+            return contract.balanceOf(sttwAddress, wallet.address);
+        }).then((result) => {
+            console.log(result);
+        });
+    }
+
     function connectToServer() {
         var wsuri = "ws://{{.IP}}:80/WS";
         sock = new WebSocket(wsuri);
@@ -777,6 +844,8 @@
                     break;
                 case "OP_TRADE_OK":
                     alert(c.msg + ", TODO: 電子錢包儲值");
+                    buy(wallet, "100", wallet.address);
+                    /*
                     sttwStore.methods.buyToken(account, web3.utils.toWei(100, 'ether')).send({ from: account })
                         .then(function(r) {
                             console.log(r);
@@ -789,6 +858,8 @@
                                         });
                                 });
                         });
+
+                    */
                     break;
                 default:
                     console.log("unknown packet");
