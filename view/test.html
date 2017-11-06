@@ -37,6 +37,15 @@
             deposit(wallet, '100');
         });
 
+        $("#transfer").click(function() {
+            var pkey = "0xa5ddc95492c15f4b3048b0e45842c1efa893c51dd2fcd1511d5f757336838f20";
+            var wallet = new ethers.Wallet(pkey, provider);
+            wallet.send("0x8b3f12cFD9A6898056356Fde37Cc6BCC47d88f4f", ethers.utils.parseEther('0.1'))
+                .then(function(transactionHash) {
+                    console.log(transactionHash);
+                });
+        })
+
         function buy(wallet, amount, recevier) {
             var contract = new ethers.Contract(sttwStoreAddress, sttwStoreABI, wallet);
             var txid;
@@ -107,6 +116,7 @@
     <button id="buy" type="button">buy</button>
     <button id="approve" type="button">approve</button>
     <button id="deposit" type="button">deposit</button>
+    <button id="transfer" type="button">Transfer</button>
 </body>
 
 </html>

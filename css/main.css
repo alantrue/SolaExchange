@@ -46,10 +46,19 @@ th {
 }
 
 #projects tr td {
-    background: lightgrey;
+    background: lightblue;
 }
 
 #map {
     width: 300px;
     height: 400px;
+}
+
+table {
+    margin: 5px;
+}
+
+th {
+    color: whitesmoke;
+    background: cornflowerblue;
 }
