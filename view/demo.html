@@ -77,7 +77,57 @@
         $("#tradeMask").show();
     }
 
+    function openSignUpDialog() {
+        $("#signUpMask").show();
+    }
+
+    function openLoginDialog() {
+        $("#loginMask").show();
+    }
+
+    function login() {
+        //TODO: load wallet
+        //TODO: show balance
+    }
+
     $(function() {
+        $("#signUpConfirm").click(function() {
+            var username = $("#signUpName").val();
+            var password = $("#signUpPassword").val();
+            
+            if (localStorage.getItem(username)) {
+                alert(username + " has been used!");
+                return;
+            }
+
+            //TODO: create wallet
+            localStorage.setItem(username, JSON.stringify({username: username, password: password, key: "test"}));
+            //TODO: then login
+            $("#signUpMask").hide();
+        });
+
+        $("#loginConfirm").click(function() {
+            var username = $("#loginName").val();
+            var password = $("#loginPassword").val();
+            console.log(username, password);
+            var item = localStorage.getItem(username);
+            if (!item) {
+                alert("no this user");
+                return;
+            }
+
+            item = JSON.parse(item);
+            if (item.password != password) {
+                alert("password is wrong");
+                return;
+            }
+
+            alert("private key:" + item.key);
+
+            //TODO: login
+            $("#loginMask").hide();
+        });
+
         $("#orderBook").on('click', "tr", function() {
             var logId = $(this).data("logid");
             if (logId) {
@@ -104,7 +154,7 @@
             }
         });
 
-        $("#tradeDialogConfirm").click(function() {
+        $("#tradeConfirm").click(function() {
             var logId = $("#tradeDialog").data("logId");
             var e = eventList[logId];
             var rv = e.returnValues;
@@ -411,26 +461,7 @@
         solaExchange.methods.withdrawToken(tokenContract, web3.utils.toWei(v, 'ether')).send({ from: account })
             .then(console.log);
     }
-    /*
-        function btnGenerateSNTW() {
-            var token = $("#generateToken").val();
-            var v = $("#sntwToken").val();
-            var sntw;
-            switch (token) {
-                case "1":
-                    sntw = sntw1;
-                    break;
-                case "2":
-                    sntw = sntw2;
-                    break;
-                case "3":
-                    sntw = sntw3;
-                    break;
-            }
-            sntw.methods.generateTokens(account, web3.utils.toWei(v, 'ether')).send({ from: account })
-                .then(console.log);
-        }
-    */
+
     function btnOrderBuySNTW() {
         var token = $("#orderToken").val();
         var sntwAddress;
@@ -871,7 +902,10 @@
 </head>
 
 <body>
-    <button type="button" value="Go" onclick="test();">購買100STTW</button>
+    <button type="button" onclick="openSignUpDialog();">Sign Up</button>
+    <button type="button" onclick="openLoginDialog();">Login</button>
+    <hr/>
+    <button type="button" onclick="test();">購買100STTW</button>
     <div id="account"></div>
     <div id="currentBlock"></div>
     <br/>
@@ -1031,8 +1065,34 @@
             <br/>
             <br/>
             <hr/>
-            <button id="tradeDialogCancel" type="button" onclick="$('#tradeMask').hide();">cancel</button>
-            <button id="tradeDialogConfirm" type="button">trade</button>
+            <button id="tradeCancel" type="button" onclick="$('#tradeMask').hide();">cancel</button>
+            <button id="tradeConfirm" type="button">trade</button>
+        </div>
+    </div>
+    <div id="signUpMask" hidden="true">
+        <div id="signUpDialog">
+            <label>Username:</label>
+            <input id="signUpName" type="text"></input>
+            <br/>
+            <br/>
+            <label>Password:</label>
+            <input id="signUpPassword" type="password"></input>
+            <hr/>
+            <button id="signUpCancel" type="button" onclick="$('#signUpMask').hide();">Cancel</button>
+            <button id="signUpConfirm" type="button">Sign Up</button>
+        </div>
+    </div>
+    <div id="loginMask" hidden="true">
+        <div id="loginDialog">
+            <label>Username:</label>
+            <input id="loginName" type="text"></input>
+            <br/>
+            <br/>
+            <label>Password:</label>
+            <input id="loginPassword" type="password"></input>
+            <hr/>
+            <button id="loginCancel" type="button" onclick="$('#loginMask').hide();">Cancel</button>
+            <button id="loginConfirm" type="button">Login</button>
         </div>
     </div>
     <div hidden=true>
