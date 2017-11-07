@@ -498,24 +498,24 @@
 
     function btnWithdrawToken() {
         var token = $("#token").val();
-        var tokenContract;
+        var tokenAddress;
         switch (token) {
             case "0":
-                tokenContract = sttw;
+                tokenAddress = sttwAddress;
                 break;
             case "1":
-                tokenContract = sntw1;
+                tokenAddress = sntwAddress1;
                 break;
             case "2":
-                tokenContract = sntw2;
+                tokenAddress = sntwAddress2;
                 break;
             case "3":
-                tokenContract = sntw3;
+                tokenAddress = sntwAddress3;
                 break;
         }
 
         var v = $("#walletToken").val();
-        solaExchange.methods.withdrawToken(tokenContract, web3.utils.toWei(v, 'ether')).send({ from: account })
+        solaExchange.methods.withdrawToken(tokenAddress, web3.utils.toWei(v, 'ether')).send({ from: account })
             .then(console.log);
     }
 
@@ -912,7 +912,7 @@
     }
 
     function connectToServer() {
-        var wsuri = "ws://{{.IP}}:80/WS";
+        var wsuri = "ws://{{.IP}}:{{.Port}}/WS";
         sock = new WebSocket(wsuri);
 
         sock.onopen = function() {

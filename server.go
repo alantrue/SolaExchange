@@ -16,7 +16,7 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-type Order struct {
+type order struct {
 	MerchantID        string `json:"MerchantID"`
 	MerchantTradeNo   string `json:"MerchantTradeNo"`
 	MerchantTradeDate string `json:"MerchantTradeDate"`
@@ -35,6 +35,8 @@ type Order struct {
 	CheckMacValue     string `json:"CheckMacValue"`
 }
 
+var gPort = "80"
+
 func main() {
 	log.Println("server starting")
 
@@ -49,7 +51,7 @@ func main() {
 	fs := http.FileServer(http.Dir("./"))
 	http.Handle("/", http.StripPrefix("/", fs))
 
-	http.ListenAndServe(":80", nil)
+	http.ListenAndServe(":"+gPort, nil)
 }
 
 func handlerWS(w http.ResponseWriter, r *http.Request) {
@@ -109,9 +111,11 @@ func handlerDemo(w http.ResponseWriter, r *http.Request) {
 
 	data := struct {
 		IP      string
+		Port    string
 		Uncache string
 	}{
-		IP:      "alantrue.ddns.net",
+		IP:      "localhost", //"alantrue.ddns.net",
+		Port:    gPort,
 		Uncache: time.Now().Format("20060102150405"),
 	}
 
@@ -172,7 +176,7 @@ func handlerBuy(w http.ResponseWriter, r *http.Request) {
 
 	chk := createCheck(id, date, returnURL, clientBackURL, itemName, price)
 
-	o := Order{
+	o := order{
 		MerchantID:        "2000132",
 		MerchantTradeNo:   id,
 		MerchantTradeDate: date,
