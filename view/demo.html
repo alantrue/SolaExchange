@@ -86,7 +86,7 @@
         $("#loginMask").show();
     }
 
-    function login(username, privateKey) {
+    function loadUserWallet(username, privateKey) {
         userWallet = new ethers.Wallet(privateKey, provider);
         console.log(userWallet);
         $("#userPanel").show();
@@ -137,13 +137,53 @@
         $("#loginMask").hide();
     }
 
+    function canUseUsername(name) {
+        //TODO: query to server
+        if (localStorage.getItem(name)) {
+            alert(name + " has been used!");
+            return false;
+        }
+        return true;
+    }
+
+    function signUp(username, password, address, privateKey) {
+        //TODO: query to server
+        localStorage.setItem(username, JSON.stringify({ username: username, password: password, address: address, privateKey: privateKey }));
+        return true;
+    }
+
+    function getPrivateKey(username, password) {
+        //TODO: query to server
+        var item = localStorage.getItem(username);
+        if (!item) {
+            alert("no this user");
+            return false;
+        }
+
+        item = JSON.parse(item);
+        if (item.password != password) {
+            alert("password is wrong");
+            return false;
+        }
+
+        return item.privateKey;
+    }
+
+    function login(username, password) {
+        var privateKey = getPrivateKey(username, password);
+        if (privateKey) {
+            loadUserWallet(username, privateKey);
+            return true;
+        }
+        return false;
+    }
+
     $(function() {
         $("#signUpConfirm").click(function() {
             var username = $("#signUpName").val();
             var password = $("#signUpPassword").val();
 
-            if (localStorage.getItem(username)) {
-                alert(username + " has been used!");
+            if (!canUseUsername(username)) {
                 return;
             }
 
@@ -152,37 +192,26 @@
             console.log("private key: " + wallet.privateKey);
             console.log(wallet);
 
-            //TODO: create wallet
-            localStorage.setItem(username, JSON.stringify({ username: username, password: password, address: wallet.address, privateKey: wallet.privateKey }));
+            if (!signUp(username, password, wallet.address, wallet.privateKey)) {
+                return;
+            }
 
             adminWallet.send(wallet.address, ethers.utils.parseEther('0.2'))
                 .then(function(transactionHash) {
                     console.log(transactionHash);
-                    login(username, wallet.privateKey);
+                    login(username, password);
                 });
 
-            //TODO: then login
             $("#signUpMask").hide();
         });
 
         $("#loginConfirm").click(function() {
             var username = $("#loginName").val();
             var password = $("#loginPassword").val();
-            console.log(username, password);
-            var item = localStorage.getItem(username);
-            if (!item) {
-                alert("no this user");
-                return;
-            }
 
-            item = JSON.parse(item);
-            if (item.password != password) {
-                alert("password is wrong");
-                return;
+            if (login(username, password)) {
+                $("#loginMask").hide();
             }
-
-            login(item.username, item.privateKey);
-            $("#loginMask").hide();
         });
 
         $("#orderBook").on('click', "tr", function() {
