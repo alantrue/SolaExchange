@@ -138,22 +138,73 @@
     }
 
     function canUseUsername(name) {
-        //TODO: query to server
-        if (localStorage.getItem(name)) {
-            alert(name + " has been used!");
-            return false;
-        }
-        return true;
+        var result;
+        $.ajax({
+            url: "/checkUsername",
+            type: "post",
+            dataType: "html",
+            data: {
+                username: name
+            },
+            async: false,
+            success: function(r) {
+                if (r == "true") {
+                    result = true;
+                } else {
+                    result = false;
+                    alert(name + " has been used!");
+                }
+            },
+        });
+
+        return result;
     }
 
     function signUp(username, password, address, privateKey) {
-        //TODO: query to server
-        localStorage.setItem(username, JSON.stringify({ username: username, password: password, address: address, privateKey: privateKey }));
-        return true;
+        var result;
+        $.ajax({
+            url: "/signUp",
+            type: "post",
+            dataType: "html",
+            data: {
+                username: username,
+                password: password,
+                address: address,
+                privateKey: privateKey
+            },
+            async: false,
+            success: function(r) {
+                if (r == "true") {
+                    result = true;
+                } else {
+                    result = false;
+                }
+            },
+        });
+
+        return result;
     }
 
     function getPrivateKey(username, password) {
-        //TODO: query to server
+        var privateKey;
+        $.ajax({
+            url: "/signIn",
+            type: "post",
+            dataType: "html",
+            data: {
+                username: username,
+                password: password
+            },
+            async: false,
+            success: function(r) {
+                if (r == "false") {
+                    alert("no this user or password is wrong");
+                } else {                    
+                    privateKey = r;
+                }
+            },
+        });
+/*
         var item = localStorage.getItem(username);
         if (!item) {
             alert("no this user");
@@ -165,8 +216,8 @@
             alert("password is wrong");
             return false;
         }
-
-        return item.privateKey;
+*/
+        return privateKey;
     }
 
     function login(username, password) {

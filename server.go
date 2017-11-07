@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/sha256"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -14,6 +15,7 @@ import (
 	"./packetHandler"
 	simplejson "github.com/bitly/go-simplejson"
 	"github.com/gorilla/websocket"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 type order struct {
@@ -36,9 +38,16 @@ type order struct {
 }
 
 var gPort = "80"
+var gDb *sql.DB
 
 func main() {
 	log.Println("server starting")
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+
+	var err error
+	gDb, err = sql.Open("sqlite3", "solaExchange.db")
+	defer gDb.Close()
+	checkErr(err)
 
 	go packetHandler.Do()
 
@@ -46,12 +55,21 @@ func main() {
 	http.HandleFunc("/demo", handlerDemo)
 	http.HandleFunc("/buy", handlerBuy)
 	http.HandleFunc("/test", handlerTest)
-	http.HandleFunc("/OrderComplete", handlerOrderComplete)
+	http.HandleFunc("/orderComplete", handlerOrderComplete)
+	http.HandleFunc("/checkUsername", handlerCheckUsername)
+	http.HandleFunc("/signUp", handlerSignUp)
+	http.HandleFunc("/signIn", handlerSignIn)
 
 	fs := http.FileServer(http.Dir("./"))
 	http.Handle("/", http.StripPrefix("/", fs))
 
 	http.ListenAndServe(":"+gPort, nil)
+}
+
+func checkErr(err error) {
+	if err != nil {
+		panic(err)
+	}
 }
 
 func handlerWS(w http.ResponseWriter, r *http.Request) {
@@ -94,11 +112,11 @@ func handlerOrderComplete(w http.ResponseWriter, r *http.Request) {
 		id := r.Form["MerchantTradeNo"][0]
 		tradeNo := r.Form["TradeNo"][0]
 		tradeAmount := r.Form["TradeAmt"][0]
-		fmt.Println(id, tradeNo, tradeAmount)
+		log.Println(id, tradeNo, tradeAmount)
 
 		packetHandler.TradeComplete(id)
 	} else {
-		fmt.Println(r.Form)
+		log.Println(r.Form)
 	}
 
 }
@@ -169,7 +187,7 @@ func createCheck(id, date, returnURL, clientBackURL, itemName, price string) str
 func handlerBuy(w http.ResponseWriter, r *http.Request) {
 	id := time.Now().Format("20060102150405")
 	date := time.Now().Format("2006/01/02 15:04:05")
-	returnURL := "http://alantrue.ddns.net/OrderComplete"
+	returnURL := "http://alantrue.ddns.net/orderComplete"
 	clientBackURL := "http://alantrue.ddns.net/demo"
 	itemName := "100 STTW"
 	price := "100"
@@ -197,7 +215,7 @@ func handlerBuy(w http.ResponseWriter, r *http.Request) {
 
 	b, err := json.Marshal(o)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return
 	}
 
@@ -306,4 +324,60 @@ func getCheckMacValue(form url.Values) string {
 	fmt.Println()
 
 	return v
+}
+
+func handlerCheckUsername(w http.ResponseWriter, r *http.Request) {
+	username := r.FormValue("username")
+
+	sqlCmd := fmt.Sprintf(`SELECT COUNT(username) FROM account WHERE username = '%[1]v'`, username)
+
+	var count int64
+	err := gDb.QueryRow(sqlCmd).Scan(&count)
+	switch {
+	case err == sql.ErrNoRows:
+		log.Fatal(err)
+	case err != nil:
+		log.Fatal(err)
+	default:
+		if count == 0 {
+			w.Write([]byte("true"))
+		} else {
+			w.Write([]byte("false"))
+		}
+	}
+}
+
+func handlerSignUp(w http.ResponseWriter, r *http.Request) {
+	username := r.FormValue("username")
+	password := r.FormValue("password")
+	address := r.FormValue("address")
+	privateKey := r.FormValue("privateKey")
+
+	sqlCmd := fmt.Sprintf(`INSERT INTO account (username, password, address, private_key) VALUES ('%v', '%v', '%v', '%v');`, username, password, address, privateKey)
+
+	_, err := gDb.Exec(sqlCmd)
+	if err != nil {
+		log.Println("handlerSignUp Exec Error", err)
+		w.Write([]byte("false"))
+	} else {
+		w.Write([]byte("true"))
+	}
+}
+
+func handlerSignIn(w http.ResponseWriter, r *http.Request) {
+	username := r.FormValue("username")
+	password := r.FormValue("password")
+
+	sqlCmd := fmt.Sprintf(`SELECT private_key FROM account WHERE username = '%[1]v' AND password = '%[2]v'`, username, password)
+
+	var privateKey string
+	err := gDb.QueryRow(sqlCmd).Scan(&privateKey)
+	switch {
+	case err == sql.ErrNoRows:
+		w.Write([]byte("false"))
+	case err != nil:
+		log.Fatal(err)
+	default:
+		w.Write([]byte(privateKey))
+	}
 }
