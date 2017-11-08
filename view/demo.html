@@ -302,7 +302,7 @@
                     console.log(r);
                     refreshOrder();
                     refreshTrade();
-                    freshPriceChart();
+                    refreshPriceChart();
                 });
 
             $("#tradeMask").hide();
@@ -427,7 +427,7 @@
                         dataInitialized = true;
                         refreshOrder();
                         refreshTrade();
-                        freshPriceChart();
+                        refreshPriceChart();
                         refreshTransfer();
                     } else {
                         refreshExpires();
@@ -1074,32 +1074,38 @@
         };
     }
 
-    function freshPriceChart() {
-        solaExchange.getPastEvents('Trade', {
-                //filter: { myIndexedParam: [20, 23], myOtherIndexedParam: '0x123456789...' }, // Using an array means OR: e.g. 20 or 23
-                fromBlock: 4642724,
-                toBlock: 'latest'
-            })
-            .then(function(trades) {
+    function refreshPriceChart() {
+        $.ajax({
+            url: "/getTrade",
+            type: "post",
+            dataType: "html",
+            data: {
+                timestamp: 0
+            },
+            async: false,
+            success: function(r) {
+                console.log(r);
+                var trades = JSON.parse(r);
+                console.log(trades);
+
                 var data = [];
 
                 for (var i = 0; i < trades.length; i++) {
-                    var blockNumber = trades[i].blockNumber;
-                    var rv = trades[i].returnValues;
+                    var t = trades[i];
                     var address, amount, price;
-                    if (sttwAddress == rv.tokenGive) {
-                        address = rv.tokenGet;
-                        amount = web3.utils.fromWei(rv.amountGet, 'ether');
-                        price = web3.utils.fromWei(rv.amountGive, 'ether');
+                    if (sttwAddress == t.tokenGive) {
+                        address = t.tokenGet;
+                        amount = web3.utils.fromWei(t.amountGet, 'ether');
+                        price = web3.utils.fromWei(t.amountGive, 'ether');
                     } else {
-                        address = rv.tokenGive;
-                        amount = web3.utils.fromWei(rv.amountGive, 'ether');
-                        price = web3.utils.fromWei(rv.amountGet, 'ether');
+                        address = t.tokenGive;
+                        amount = web3.utils.fromWei(t.amountGive, 'ether');
+                        price = web3.utils.fromWei(t.amountGet, 'ether');
                     }
 
                     var rate = price / amount;
 
-                    var timeIndex = Math.floor(blockNumber / 10);
+                    var timeIndex = Math.floor(t.timestamp / 60);
                     if (data.length == 0 || data[data.length - 1][0] != timeIndex) {
                         data.push([timeIndex, rate, rate, rate, rate]);
                     } else {
@@ -1129,7 +1135,8 @@
                         data: data
                     }]
                 });
-            });
+            },
+        });
     }
     </script>
 </head>

@@ -40,6 +40,7 @@ type order struct {
 type tradeInfo struct {
 	Hash       string `json:"hash"`
 	BN         uint32 `json:"bn"`
+	Timestamp  uint32 `json:"timestamp"`
 	AmountGet  string `json:"amountGet"`
 	AmountGive string `json:"amountGive"`
 	TokenGet   string `json:"tokenGet"`
@@ -73,6 +74,7 @@ func main() {
 	http.HandleFunc("/gatherAgent", handlerGatherAgent)
 	http.HandleFunc("/gatherAgent/logTrade", handlerLogTrade)
 	http.HandleFunc("/gatherAgent/logBlockNumber", handlerLogBlockNumber)
+	http.HandleFunc("/getTrade", handlerGetTrade)
 
 	fs := http.FileServer(http.Dir("./"))
 	http.Handle("/", http.StripPrefix("/", fs))
@@ -229,6 +231,37 @@ func handlerLogBlockNumber(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Write([]byte("ok"))
+}
+
+func handlerGetTrade(w http.ResponseWriter, r *http.Request) {
+	timestamp := r.FormValue("timestamp")
+
+	rows, err := gDb.Query(fmt.Sprintf(
+		`SELECT B.timestamp, A.transaction_hash, A.token_get, A.token_give, A.amount_get, A.amount_give, A.get, A.give FROM trade A 
+	    LEFT JOIN block B ON A.block_number = B.number
+	    WHERE B.timestamp IS NOT NULL AND timestamp > %v 
+	    ORDER BY B.timestamp;`, timestamp))
+
+	if err != nil {
+		log.Println("Query Error", err)
+	}
+	defer rows.Close()
+
+	trades := []tradeInfo{}
+	for rows.Next() {
+		var t tradeInfo
+		if err := rows.Scan(&t.Timestamp, &t.Hash, &t.TokenGet, &t.TokenGive, &t.AmountGet, &t.AmountGive, &t.Get, &t.Give); err == nil {
+			trades = append(trades, t)
+		} else {
+			log.Println("Scan Error", err)
+		}
+	}
+	b, err := json.Marshal(trades)
+	if err != nil {
+		log.Println("Marshal Error", err)
+	}
+
+	w.Write(b)
 }
 
 func createCheck(id, date, returnURL, clientBackURL, itemName, price string) string {
