@@ -16,6 +16,7 @@
     <script type="text/javascript" src="data/sntwABI.js?{{.Uncache}}"></script>
     <script type="text/javascript" src="data/solaExchangeABI.js?{{.Uncache}}"></script>
     <script type="text/javascript" src="data/map_style.json?{{.Uncache}}"></script>
+    <script src="https://code.highcharts.com/stock/highstock.js"></script>
     <script type="text/javascript">
     if (typeof web3 !== 'undefined') {
         web3 = new Web3(web3.currentProvider);
@@ -301,6 +302,7 @@
                     console.log(r);
                     refreshOrder();
                     refreshTrade();
+                    freshPriceChart();
                 });
 
             $("#tradeMask").hide();
@@ -425,6 +427,7 @@
                         dataInitialized = true;
                         refreshOrder();
                         refreshTrade();
+                        freshPriceChart();
                         refreshTransfer();
                     } else {
                         refreshExpires();
@@ -1070,13 +1073,71 @@
             }
         };
     }
+
+    function freshPriceChart() {
+        solaExchange.getPastEvents('Trade', {
+                //filter: { myIndexedParam: [20, 23], myOtherIndexedParam: '0x123456789...' }, // Using an array means OR: e.g. 20 or 23
+                fromBlock: 4642724,
+                toBlock: 'latest'
+            })
+            .then(function(trades) {
+                var data = [];
+
+                for (var i = 0; i < trades.length; i++) {
+                    var blockNumber = trades[i].blockNumber;
+                    var rv = trades[i].returnValues;
+                    var address, amount, price;
+                    if (sttwAddress == rv.tokenGive) {
+                        address = rv.tokenGet;
+                        amount = web3.utils.fromWei(rv.amountGet, 'ether');
+                        price = web3.utils.fromWei(rv.amountGive, 'ether');
+                    } else {
+                        address = rv.tokenGive;
+                        amount = web3.utils.fromWei(rv.amountGive, 'ether');
+                        price = web3.utils.fromWei(rv.amountGet, 'ether');
+                    }
+
+                    var rate = price / amount;
+
+                    var timeIndex = Math.floor(blockNumber / 10);
+                    if (data.length == 0 || data[data.length - 1][0] != timeIndex) {
+                        data.push([timeIndex, rate, rate, rate, rate]);
+                    } else {
+                        var stick = data[data.length - 1];
+                        if (rate > stick[2]) {
+                            stick[2] = rate;
+                        }
+                        if (rate < stick[3]) {
+                            stick[3] = rate;
+                        }
+                        stick[4] = rate;
+                    }
+                }
+
+                Highcharts.stockChart('container', {
+                    rangeSelector: {
+                        selected: 1
+                    },
+
+                    title: {
+                        text: 'SNTW Price'
+                    },
+
+                    series: [{
+                        type: 'candlestick',
+                        name: 'SNTW Price',
+                        data: data
+                    }]
+                });
+            });
+    }
     </script>
 </head>
 
 <body>
     <table style="width:100%">
         <tr>
-            <td style="width:30%; border-style: solid; border-width: 1px; vertical-align: top;">
+            <td style="width:20%; border-style: solid; border-width: 1px; vertical-align: top;">
                 <div>一般投資人:</div>
                 <button type="button" onclick="openSignUpDialog();">Sign Up</button>
                 <button type="button" onclick="openLoginDialog();">Login</button>
@@ -1105,28 +1166,37 @@
                     <div>Funds</div>
                 </div>
             </td>
-            <td style="width:70%; border-style: solid; border-width: 1px; vertical-align: top;">
+            <td style="width:80%; border-style: solid; border-width: 1px; vertical-align: top;">
                 <div>交易所:</div>
                 <div id="currentBlock"></div>
                 <div id="account"></div>
                 <br/>
-                <label>In Wallet:</label>
-                <div id="ethInWallet"></div>
-                <div id="sttwInWallet"></div>
-                <div id="sntwInWallet1"></div>
-                <div id="sntwInWallet2"></div>
-                <div id="sntwInWallet3"></div>
-                <br/>
-                <label>In SolaExchange:</label>
-                <div id="sttwInSolaExchange"></div>
-                <div id="sntwInSolaExchange1"></div>
-                <div id="sntwInSolaExchange2"></div>
-                <div id="sntwInSolaExchange3"></div>
-                <br/>
-                <label>TODO List:</label>
-                <div>SNTW Chart</div>
-                <div>SNTW Volumns</div>
-                <div>Funds</div>
+                <table>
+                    <tr style="vertical-align: top;">
+                        <td style="padding-right: 30px;">
+                            <label>In Wallet:</label>
+                            <div id="ethInWallet"></div>
+                            <div id="sttwInWallet"></div>
+                            <div id="sntwInWallet1"></div>
+                            <div id="sntwInWallet2"></div>
+                            <div id="sntwInWallet3"></div>
+                        </td>
+                        <td style="padding-right: 30px;">
+                            <label>In SolaExchange:</label>
+                            <div id="sttwInSolaExchange"></div>
+                            <div id="sntwInSolaExchange1"></div>
+                            <div id="sntwInSolaExchange2"></div>
+                            <div id="sntwInSolaExchange3"></div>
+                        </td>
+                        <td style="padding-right: 30px;">
+                            <label>TODO List:</label>
+                            <div>SNTW Chart</div>
+                            <div>SNTW Volumns</div>
+                            <div>Funds</div>
+                        </td>
+                    </tr>
+                </table>
+                </div>
                 <hr/>
                 <select id="token">
                     <option value="0">STTW</option>
@@ -1174,6 +1244,9 @@
                 <button type="button" onclick="btnOrderSellSNTW()">order (sell SNTW)</button>
                 <hr/>
                 <div style="overflow: auto;">
+                    <span style="float: left">
+                        <div id="container" style="min-width: 300px"></div>
+                    </span>
                     <span style="float: left">
                         <label>Order Book</label>
                         <table id="orderBook">
