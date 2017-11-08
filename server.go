@@ -37,6 +37,17 @@ type order struct {
 	CheckMacValue     string `json:"CheckMacValue"`
 }
 
+type tradeInfo struct {
+	Hash       string `json:"hash"`
+	BN         uint32 `json:"bn"`
+	AmountGet  string `json:"amountGet"`
+	AmountGive string `json:"amountGive"`
+	TokenGet   string `json:"tokenGet"`
+	TokenGive  string `json:"tokenGive"`
+	Get        string `json:"get"`
+	Give       string `json:"give"`
+}
+
 var gPort = "80"
 var gDb *sql.DB
 
@@ -59,6 +70,9 @@ func main() {
 	http.HandleFunc("/checkUsername", handlerCheckUsername)
 	http.HandleFunc("/signUp", handlerSignUp)
 	http.HandleFunc("/signIn", handlerSignIn)
+	http.HandleFunc("/gatherAgent", handlerGatherAgent)
+	http.HandleFunc("/gatherAgent/logTrade", handlerLogTrade)
+	http.HandleFunc("/gatherAgent/logBlockNumber", handlerLogBlockNumber)
 
 	fs := http.FileServer(http.Dir("./"))
 	http.Handle("/", http.StripPrefix("/", fs))
@@ -159,6 +173,62 @@ func handlerTest(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+func handlerGatherAgent(w http.ResponseWriter, r *http.Request) {
+	t, err := template.ParseFiles("view/gatherAgent.html")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	data := struct {
+		Uncache string
+	}{
+		Uncache: time.Now().Format("20060102150405"),
+	}
+
+	err = t.Execute(w, data)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func handlerLogTrade(w http.ResponseWriter, r *http.Request) {
+	decoder := json.NewDecoder(r.Body)
+	info := make([]tradeInfo, 0)
+	err := decoder.Decode(&info)
+	if err != nil {
+		panic(err)
+	}
+	defer r.Body.Close()
+	log.Println(info)
+
+	for _, v := range info {
+		sqlCmd := fmt.Sprintf(`INSERT OR IGNORE INTO trade VALUES ('%v', %v, '%v', '%v', '%v', '%v', '%v', '%v');`,
+			v.Hash, v.BN, v.TokenGet, v.TokenGive, v.AmountGet, v.AmountGive, v.Get, v.Give)
+
+		_, err := gDb.Exec(sqlCmd)
+		if err != nil {
+			log.Println("handlerLogTrade Exec Error", err)
+		}
+	}
+
+	w.Write([]byte("ok"))
+}
+
+func handlerLogBlockNumber(w http.ResponseWriter, r *http.Request) {
+	blockNumber := r.FormValue("blockNumber")
+	timestamp := r.FormValue("timestamp")
+	log.Println(blockNumber, timestamp)
+
+	sqlCmd := fmt.Sprintf(`INSERT OR IGNORE INTO block VALUES (%v, %v);`, blockNumber, timestamp)
+
+	_, err := gDb.Exec(sqlCmd)
+	if err != nil {
+		log.Println("handlerLogBlockNumber Exec Error", err)
+	}
+
+	w.Write([]byte("ok"))
 }
 
 func createCheck(id, date, returnURL, clientBackURL, itemName, price string) string {

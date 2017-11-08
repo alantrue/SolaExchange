@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Gether Agent</title>
+    <script type="text/javascript" src="js/jquery.js"></script>
+    <script type="text/javascript" src="js/web3.min.js"></script>
+    <script type="text/javascript" src="data/solaExchangeABI.js?{{.Uncache}}"></script>
+    <script type="text/javascript">
+    if (typeof web3 !== 'undefined') {
+        web3 = new Web3(web3.currentProvider);
+    } else {
+        // set the provider you want from Web3.providers
+        web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
+    }
+
+    var solaExchange = new web3.eth.Contract(solaExchangeABI, solaExchangeAddress);
+
+    var tradeLogger = { lastBlock: -1, inQuery: false };
+    setInterval(function() {
+        if (!tradeLogger.inQuery) {
+            gatherTrades(tradeLogger);
+        }
+    }, 5000);
+
+
+    function gatherTrades(logger) {
+        console.log(logger);
+        logger.inQuery = true;
+        solaExchange.getPastEvents('Trade', {
+                fromBlock: logger.lastBlock + 1,
+                toBlock: 'latest'
+            })
+            .then(function(trades) {
+                var infoList = [];
+                var blockNums = {};
+                for (var i = 0; i < trades.length; i++) {
+                    var t = trades[i];
+                    var rv = t.returnValues;
+
+                    blockNums[t.blockNumber] = true;
+                    if (t.blockNumber > logger.lastBlock) {
+                        logger.lastBlock = t.blockNumber;
+                    }
+
+                    var info = {
+                        hash: t.transactionHash,
+                        bn: t.blockNumber,
+                        amountGet: rv.amountGet,
+                        amountGive: rv.amountGive,
+                        tokenGet: rv.tokenGet,
+                        tokenGive: rv.tokenGive,
+                        get: rv.get,
+                        give: rv.give
+                    };
+                    infoList.push(info);
+                }
+
+                if (infoList.length > 0) {
+                    $.ajax({
+                        url: "gatherAgent/logTrade",
+                        type: "POST",
+                        contentType: 'application/json',
+                        data: JSON.stringify(infoList),
+                        success: function() {}
+                    });
+                }
+
+                for (var blockNumber in blockNums) {
+                    web3.eth.getBlock(blockNumber).then(function(block) {
+                        $.ajax({
+                            url: "gatherAgent/logBlockNumber",
+                            type: "POST",
+                            data: {
+                                blockNumber: block.number,
+                                timestamp: block.timestamp
+                            },
+                            success: function() {}
+                        });
+                    });
+                }
+
+                logger.inQuery = false;
+            });
+    }
+    </script>
+</head>
+
+<body>
+</body>
+
+</html>
