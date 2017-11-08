@@ -199,24 +199,12 @@
             success: function(r) {
                 if (r == "false") {
                     alert("no this user or password is wrong");
-                } else {                    
+                } else {
                     privateKey = r;
                 }
             },
         });
-/*
-        var item = localStorage.getItem(username);
-        if (!item) {
-            alert("no this user");
-            return false;
-        }
 
-        item = JSON.parse(item);
-        if (item.password != password) {
-            alert("password is wrong");
-            return false;
-        }
-*/
         return privateKey;
     }
 
@@ -814,6 +802,48 @@
                         $("#myTrades tr:last").after(sprintf("<tr style='background: lightblue'><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>", order, getTokenName(sntwAddress), rate, sntw, sttw));
                     }
                 }
+
+
+                $("#volumns tr:gt(0)").remove();
+
+                var volumns = {};
+
+                for (var i = 0; i < trades.length; i++) {
+                    var rv = trades[i].returnValues;
+                    if (sttwAddress == rv.tokenGive) {
+                        var address = rv.tokenGet;
+                        var amount = web3.utils.fromWei(rv.amountGet, 'ether');
+                        var price = web3.utils.fromWei(rv.amountGive, 'ether');
+                        var bid = price / amount;
+
+                        var v = volumns[address];
+                        if (v) {
+                            v.amount += parseFloat(amount);
+                            v.bid = bid;
+                        } else {
+                            volumns[address] = { amount: parseFloat(amount), bid: bid };
+                        }
+                    } else {
+                        var address = rv.tokenGive;
+                        var amount = web3.utils.fromWei(rv.amountGive, 'ether');
+                        var price = web3.utils.fromWei(rv.amountGet, 'ether');
+                        var offer = price / amount;
+
+                        var v = volumns[address];
+                        if (v) {
+                            v.amount += parseFloat(amount);
+                            v.offer = offer;
+                        } else {
+                            volumns[address] = { amount: parseFloat(amount), offer: offer };
+                        }
+                    }
+                }
+
+                for (var address in volumns) {
+                    var v = volumns[address];
+
+                    $("#volumns tr:last").after(sprintf("<tr style='background: lightblue'><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>", getTokenName(address), v.amount, v.bid ? v.bid : "", v.offer ? v.offer : ""));
+                }
             });
     }
 
@@ -904,7 +934,7 @@
             });
     }
 
-    function test() {
+    function buySTTW() {
         if (!userWallet) {
             alert("no user login");
             return;
@@ -1050,7 +1080,7 @@
                 <div>一般投資人:</div>
                 <button type="button" onclick="openSignUpDialog();">Sign Up</button>
                 <button type="button" onclick="openLoginDialog();">Login</button>
-                <button type="button" onclick="test();">購買100STTW</button>
+                <button type="button" onclick="buySTTW();">購買100STTW</button>
                 <div id="userPanel" hidden=true>
                     <div id="username"></div>
                     <br/>
@@ -1145,64 +1175,75 @@
                 <hr/>
                 <div style="overflow: auto;">
                     <span style="float: left">
-                    <label>Order Book</label>
-                    <table id="orderBook">
-                        <tr>
-                            <th>Order</th>
-                            <th>Type</th>
-                            <th>SNTW/STTW</th>
-                            <th>SNTW</th>
-                            <th>STTW</th>
-                            <th>EXPIRES</th>
-                        </tr>
-                    </table>
-                </span>
+                        <label>Order Book</label>
+                        <table id="orderBook">
+                            <tr>
+                                <th>Order</th>
+                                <th>Type</th>
+                                <th>SNTW/STTW</th>
+                                <th>SNTW</th>
+                                <th>STTW</th>
+                                <th>EXPIRES</th>
+                            </tr>
+                        </table>
+                    </span>
+                    <span style="float: left">
+                        <label>Volumns</label>
+                        <table id="volumns">
+                            <tr>
+                                <th>Pair</th>
+                                <th>Daily</th>
+                                <th>Bid</th>
+                                <th>Offer</th>
+                            </tr>
+                        </table>
+                    </span>
                     <span style="float: left">
                     <label>My Orders</label>
-                    <table id="myOrders">
-                        <tr>
-                            <th>Order</th>
-                            <th>Type</th>
-                            <th>SNTW/STTW</th>
-                            <th>SNTW</th>
-                            <th>STTW</th>
-                            <th>EXPIRES</th>
-                            <th>STATUS</th>
-                        </tr>
-                    </table>
-                </span>
+                        <table id="myOrders">
+                            <tr>
+                                <th>Order</th>
+                                <th>Type</th>
+                                <th>SNTW/STTW</th>
+                                <th>SNTW</th>
+                                <th>STTW</th>
+                                <th>EXPIRES</th>
+                                <th>STATUS</th>
+                            </tr>
+                        </table>
+                    </span>
                     <span style="float: left">
-                    <label>My Trades</label>
-                    <table id="myTrades">
-                        <tr>
-                            <th>Trade</th>
-                            <th>Type</th>
-                            <th>SNTW/STTW</th>
-                            <th>SNTW</th>
-                            <th>STTW</th>
-                        </tr>
-                    </table>
-                </span>
+                        <label>My Trades</label>
+                        <table id="myTrades">
+                            <tr>
+                                <th>Trade</th>
+                                <th>Type</th>
+                                <th>SNTW/STTW</th>
+                                <th>SNTW</th>
+                                <th>STTW</th>
+                            </tr>
+                        </table>
+                    </span>
                     <span style="float: left">
-                    <label>My Transfer From</label>
-                    <table id="myTransferFrom">
-                        <tr>
-                            <th>Token</th>
-                            <th>Amount</th>
-                            <th>Sender</th>
-                        </tr>
-                    </table>
-                </span>
+                        <label>My Transfer From</label>
+                        <table id="myTransferFrom">
+                            <tr>
+                                <th>Token</th>
+                                <th>Amount</th>
+                                <th>Sender</th>
+                            </tr>
+                        </table>
+                    </span>
                     <span style="float: left">
-                    <label>My Transfer To</label>
-                    <table id="myTransferTo">
-                        <tr>
-                            <th>Token</th>
-                            <th>Amount</th>
-                            <th>Receiver</th>
-                        </tr>
-                    </table>
-                </span>
+                        <label>My Transfer To</label>
+                        <table id="myTransferTo">
+                            <tr>
+                                <th>Token</th>
+                                <th>Amount</th>
+                                <th>Receiver</th>
+                            </tr>
+                        </table>
+                    </span>
                 </div>
             </td>
         </tr>
