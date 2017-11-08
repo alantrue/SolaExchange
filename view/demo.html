@@ -9,6 +9,7 @@
     <script type="text/javascript" src="js/web3.min.js"></script>
     <script type="text/javascript" src="js/ethers.js?{{.Uncache}}"></script>
     <script type="text/javascript" src="js/Chart.min.js"></script>
+    <script type="text/javascript" src="js/highstock.js"></script>
     <script type="text/javascript" src="http://maps.google.com/maps/api/js?key=AIzaSyCQ3UTayHzAcoPXJUM3Ag_-FBxII1o6fNg"></script>
     <script type="text/javascript" src="js/gmaps.js?{{.Uncache}}"></script>
     <script type="text/javascript" src="data/sttwABI.js?{{.Uncache}}"></script>
@@ -16,7 +17,6 @@
     <script type="text/javascript" src="data/sntwABI.js?{{.Uncache}}"></script>
     <script type="text/javascript" src="data/solaExchangeABI.js?{{.Uncache}}"></script>
     <script type="text/javascript" src="data/map_style.json?{{.Uncache}}"></script>
-    <script src="https://code.highcharts.com/stock/highstock.js"></script>
     <script type="text/javascript">
     if (typeof web3 !== 'undefined') {
         web3 = new Web3(web3.currentProvider);
@@ -302,7 +302,7 @@
                     console.log(r);
                     refreshOrder();
                     refreshTrade();
-                    refreshPriceChart();
+                    refreshPriceChart(1510129795);
                 });
 
             $("#tradeMask").hide();
@@ -427,7 +427,7 @@
                         dataInitialized = true;
                         refreshOrder();
                         refreshTrade();
-                        refreshPriceChart();
+                        refreshPriceChart(1510129795);
                         refreshTransfer();
                     } else {
                         refreshExpires();
@@ -1074,13 +1074,13 @@
         };
     }
 
-    function refreshPriceChart() {
+    function refreshPriceChart(today) {
         $.ajax({
             url: "/getTrade",
             type: "post",
             dataType: "html",
             data: {
-                timestamp: 0
+                timestamp: today
             },
             async: false,
             success: function(r) {
@@ -1105,7 +1105,7 @@
 
                     var rate = price / amount;
 
-                    var timeIndex = Math.floor(t.timestamp / 60);
+                    var timeIndex = Math.floor(t.timestamp / 60) * 60 * 1000;
                     if (data.length == 0 || data[data.length - 1][0] != timeIndex) {
                         data.push([timeIndex, rate, rate, rate, rate]);
                     } else {
