@@ -17,12 +17,21 @@
     var solaExchange = new web3.eth.Contract(solaExchangeABI, solaExchangeAddress);
 
     var tradeLogger = { lastBlock: -1, inQuery: false };
+    $.ajax({
+        url: "gatherAgent/getLastTrade",
+        type: "GET",
+        async: false,
+        success: function(result) {
+            var result = JSON.parse(result);
+            tradeLogger.lastBlock = result.blockNumber;
+        }
+    });
+
     setInterval(function() {
         if (!tradeLogger.inQuery) {
             gatherTrades(tradeLogger);
         }
     }, 5000);
-
 
     function gatherTrades(logger) {
         console.log(logger);

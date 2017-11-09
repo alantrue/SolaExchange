@@ -73,6 +73,7 @@ func main() {
 	http.HandleFunc("/signIn", handlerSignIn)
 	http.HandleFunc("/gatherAgent", handlerGatherAgent)
 	http.HandleFunc("/gatherAgent/logTrade", handlerLogTrade)
+	http.HandleFunc("/gatherAgent/getLastTrade", handlerGetLastTrade)
 	http.HandleFunc("/gatherAgent/logBlockNumber", handlerLogBlockNumber)
 	http.HandleFunc("/getTrade", handlerGetTrade)
 
@@ -216,6 +217,23 @@ func handlerLogTrade(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Write([]byte("ok"))
+}
+
+func handlerGetLastTrade(w http.ResponseWriter, r *http.Request) {
+	var blockNumber sql.NullInt64
+	err := gDb.QueryRow("SELECT MAX(block_number) FROM trade").Scan(&blockNumber)
+	switch {
+	case err == sql.ErrNoRows:
+		log.Fatal(err)
+	case err != nil:
+		log.Fatal(err)
+	default:
+		if blockNumber.Valid {
+			w.Write([]byte(fmt.Sprintf(`{"blockNumber": %v}`, blockNumber.Int64)))
+		} else {
+			w.Write([]byte(`{"blockNumber": 0}`))
+		}
+	}
 }
 
 func handlerLogBlockNumber(w http.ResponseWriter, r *http.Request) {
