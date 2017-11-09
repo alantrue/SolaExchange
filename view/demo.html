@@ -395,7 +395,10 @@
                     }
                 }
             });
+        });
 
+        $("#priceChartToken").change(function() {
+            refreshPriceChart(1510129795);
         });
 
         init();
@@ -1074,7 +1077,25 @@
         };
     }
 
+    function toLocalTimestamp(timestamp) {
+        var d = new Date();
+        return timestamp - d.getTimezoneOffset() * 60 * 1000;
+    }
+
     function refreshPriceChart(today) {
+        var token = $("#priceChartToken").val();
+        var sntwAddress;
+        switch (token) {
+            case "1":
+                sntwAddress = sntwAddress1;
+                break;
+            case "2":
+                sntwAddress = sntwAddress2;
+                break;
+            case "3":
+                sntwAddress = sntwAddress3;
+                break;
+        }
         $.ajax({
             url: "/getTrade",
             type: "post",
@@ -1103,11 +1124,15 @@
                         price = web3.utils.fromWei(t.amountGet, 'ether');
                     }
 
+                    if (address != sntwAddress) {
+                        continue;
+                    }
+
                     var rate = price / amount;
 
                     var timeIndex = Math.floor(t.timestamp / 300) * 300 * 1000;
-                    if (data.length == 0 || data[data.length - 1][0] != timeIndex) {
-                        data.push([timeIndex, rate, rate, rate, rate]);
+                    if (data.length == 0 || data[data.length - 1][0] != toLocalTimestamp(timeIndex)) {
+                        data.push([toLocalTimestamp(timeIndex), rate, rate, rate, rate]);
                     } else {
                         var stick = data[data.length - 1];
                         if (rate > stick[2]) {
@@ -1126,12 +1151,12 @@
                     },
 
                     title: {
-                        text: 'SNTW Price'
+                        text: $("#priceChartToken option:selected").text()
                     },
 
                     series: [{
                         type: 'candlestick',
-                        name: 'SNTW Price',
+                        name: $("#priceChartToken option:selected").text() + 'Price',
                         data: data
                     }]
                 });
@@ -1252,7 +1277,14 @@
                 <hr/>
                 <div style="overflow: auto;">
                     <span style="float: left">
-                        <div id="container" style="min-width: 300px"></div>
+                        <select id="priceChartToken">
+                            <option value="1">SNTW1</option>
+                            <option value="2">SNTW2</option>
+                            <option value="3">SNTW3</option>
+                        </select>
+                        <span>
+                            <div id="container" style="min-width: 300px"></div>
+                        </span>
                     </span>
                     <span style="float: left">
                         <label>Order Book</label>
