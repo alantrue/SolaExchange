@@ -401,7 +401,85 @@
             refreshPriceChart(1510129795);
         });
 
+        $("#sttwAmountPay").bind('keyup mouseup', function() {
+            var totalPay = $(this).val();
+            var sortable = sortForOrderBook(orderBook.orders);
+            console.log(sortable);
+            var sellOrders = sortable.filter(function(o) {
+                return o[1] == "SELL";
+            });
+
+            console.log(sellOrders);
+
+            var totalGet = 0;
+            var realPay = 0;
+            var bestRate;
+            for (var i = sellOrders.length; i--;) {
+                var o = sellOrders[i][0];
+                if (!bestRate) {
+                    bestRate = o.rate;
+                }
+                if (o.remained * o.rate <= totalPay) {
+                    totalGet += o.remained;
+                    realPay += o.remained * o.rate;
+                    totalPay -= o.remained * o.rate;
+                } else if (totalPay > 0) {
+                    var rest = totalPay / o.rate;
+                    totalGet += rest;
+                    realPay += totalPay;
+                    totalPay = 0;
+                } else {
+                    break;
+                }
+            }
+            if (totalPay > 0) {
+                $("#sttwAmountRest").text(sprintf("(剩餘STTW:%s)", totalPay));
+            }
+            $("#sntwAmountGet").val(totalGet);
+            $("#sntwBuyRate").text(sprintf("均價:%s(最低賣出價:%s)", realPay/totalGet, bestRate));
+        });
+
+        $("#sntwAmountPay").bind('keyup mouseup', function() {
+            var totalPay = $(this).val();
+            var sortable = sortForOrderBook(orderBook.orders);
+            console.log(sortable);
+            var buyOrders = sortable.filter(function(o) {
+                return o[1] == "BUY";
+            });
+
+            console.log(buyOrders);
+
+            var totalGet = 0;
+            var realPay = 0;
+            var bestRate;
+            for (var i = 0; i < buyOrders.length; i++) {
+                var o = buyOrders[i][0];
+                if (!bestRate) {
+                    bestRate = o.rate;
+                }
+                if (o.remained <= totalPay) {
+                    totalGet += o.remained * o.rate;
+                    realPay += o.remained;
+                    totalPay -= o.remained;
+                } else if (totalPay > 0) {
+                    var rest = totalPay * o.rate;
+                    totalGet += rest;
+                    realPay += totalPay;
+                    totalPay = 0;
+                } else {
+                    break;
+                }
+            }
+            if (totalPay > 0) {
+                $("#sntwAmountRest").text(sprintf("(剩餘SNTW:%s)", totalPay));
+            }
+            $("#sttwAmountGet").val(totalGet);
+            $("#sntwSellRate").text(sprintf("均價:%s(最高買入價:%s)", totalGet/realPay, bestRate));
+        });
+
         init();
+
+        login("alan", "1234");
 
         web3.eth.getAccounts().then(function(r) {
             account = r[0];
@@ -1163,6 +1241,14 @@
             },
         });
     }
+
+    function buySNTW() {
+        alert("buySNTW: " + $("#sttwAmountPay").val());
+    }
+
+    function sellSNTW() {
+        alert("sellSNTW: " + $("#sntwAmountPay").val());
+    }
     </script>
 </head>
 
@@ -1191,6 +1277,37 @@
                     <div id="sntwInUserSolaExchange1"></div>
                     <div id="sntwInUserSolaExchange2"></div>
                     <div id="sntwInUserSolaExchange3"></div>
+                    <br/>
+                    <label>STTW:</label>
+                    <input id="sttwAmountPay" type="number" value=0></input>
+                    <label id="sttwAmountRest"></label>
+                    <br/>
+                    <label>預估可買入</label>
+                    <select id="sntwTokenBuy">
+                        <option value="1">SNTW1</option>
+                        <option value="2">SNTW2</option>
+                        <option value="3">SNTW3</option>
+                    </select>
+                    <input id="sntwAmountGet" type="number" value=0 disabled="true"></input>
+                    <br/>
+                    <label id="sntwBuyRate"></label>
+                    <button type="button" onclick="buySNTW();">購買SNTW</button>
+                    <br/>
+                    <br/>
+                    <select id="sntwTokenSell">
+                        <option value="1">SNTW1</option>
+                        <option value="2">SNTW2</option>
+                        <option value="3">SNTW3</option>
+                    </select>
+                    <input id="sntwAmountPay" type="number" value=0></input>
+                    <label id="sntwAmountRest"></label>
+                    <br/>
+                    <label>預估可收回STTW</label>
+                    <input id="sttwAmountGet" type="number" value=0 disabled="true"></input>
+                    <br/>
+                    <label id="sntwSellRate"></label>
+                    <button type="button" onclick="sellSNTW();">賣出SNTW</button>
+                    <br/>
                     <br/>
                     <label>TODO List:</label>
                     <div>Buy SNTW</div>
