@@ -18,207 +18,75 @@
     <script type="text/javascript" src="data/solaExchangeABI.js?{{.Uncache}}"></script>
     <script type="text/javascript" src="data/map_style.json?{{.Uncache}}"></script>
     <script type="text/javascript">
-    if (typeof web3 !== 'undefined') {
-        web3 = new Web3(web3.currentProvider);
-    } else {
-        // set the provider you want from Web3.providers
-        web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
-    }
-
-    var sttw = new web3.eth.Contract(sttwABI, sttwAddress);
-    var sttwStore = new web3.eth.Contract(sttwStoreABI, sttwStoreAddress);
-    var sntw1 = new web3.eth.Contract(sntwABI, sntwAddress1);
-    var sntw2 = new web3.eth.Contract(sntwABI, sntwAddress2);
-    var sntw3 = new web3.eth.Contract(sntwABI, sntwAddress3);
-    var solaExchange = new web3.eth.Contract(solaExchangeABI, solaExchangeAddress);
-
-    var feeRate = 0.005;
-    var autoSwitchAccount = true; //如要測試多帳號, 可改成false
-    var account;
-    var currentBlock;
-    var dataInitialized = false;
-    var eventList = {};
-    var orderBook = {};
-    var myOrders = {};
-    var allProject;
-    var myBar;
-    var userId;
-
-    var provider = new ethers.providers.JsonRpcProvider('https://kovan.infura.io', true, 42);
-    var adminPrivateKey = "0x70394e1a35f52536a07c3dc8dbc3b8f9219511130d8bfaa48518dc497ab00bd8";
-    var adminWallet = new ethers.Wallet(adminPrivateKey, provider);
-    var userWallet, useRefreshTimer;
-
-    function openTradeDialog(logId) {
-        var e = eventList[logId];
-        var rv = e.returnValues;
-
-        var type, sntw, sttw, rate;
-        if (sttwAddress == rv.tokenGive) {
-            type = "Sell";
-            sntw = web3.utils.fromWei(rv.amountGet, 'ether');
-            sttw = web3.utils.fromWei(rv.amountGive, 'ether');
-            rate = sttw / sntw;
-        } else {
-            type = "Buy";
-            sntw = web3.utils.fromWei(rv.amountGive, 'ether');
-            sttw = web3.utils.fromWei(rv.amountGet, 'ether');
-            rate = sttw / sntw;
-        }
-
-        $("#tradeDialogTradeType").text(type);
-        $("#tradeDialogDescription").html(sprintf("Order <br/> %s SNTW @ %s SNTW/STTW <br/> Expires in %s blocks", sntw, rate, rv.expires));
-        $("#tradeDialogAmountLabel").text("SNTW");
-        $("#tradeDialogAmount").val(sntw);
-        $("#tradeDialogSTTW").val(sttw);
-        $("#tradeDialogFee").val(sttw * feeRate);
-
-        $("#tradeDialog").data("logId", logId);
-        $("#tradeDialog").data("rate", rate);
-
-        $("#tradeMask").show();
-    }
-
-    function openSignUpDialog() {
-        $("#signUpMask").show();
-    }
-
-    function openLoginDialog() {
-        $("#loginMask").show();
-    }
-
-    function loadUserWallet(username, privateKey) {
-        userWallet = new ethers.Wallet(privateKey, provider);
-        console.log(userWallet);
-        $("#userPanel").show();
-        $("#username").text(sprintf("Username: %s", username));
-        $("#userAccount").text(sprintf("Account: %s", userWallet.address));
-
-        if (useRefreshTimer) {
-            clearInterval(useRefreshTimer);
-        }
-        useRefreshTimer = setInterval(function() {
-            userWallet.getBalance().then(function(balance) {
-                $("#ethInUserWallet").text(sprintf("ETH: %s", ethers.utils.formatEther(balance)));
-            });
-
-            sttw.methods.balanceOf(userWallet.address).call().then(function(r) {
-                $("#sttwInUserWallet").text(sprintf("STTW: %s", web3.utils.fromWei(r, 'ether')));
-            });
-
-            sntw1.methods.balanceOf(userWallet.address).call().then(function(r) {
-                $("#sntwInUserWallet1").text(sprintf("SNTW1: %s", web3.utils.fromWei(r, 'ether')));
-            });
-
-            sntw2.methods.balanceOf(userWallet.address).call().then(function(r) {
-                $("#sntwInUserWallet2").text(sprintf("SNTW2: %s", web3.utils.fromWei(r, 'ether')));
-            });
-
-            sntw3.methods.balanceOf(userWallet.address).call().then(function(r) {
-                $("#sntwInUserWallet3").text(sprintf("SNTW3: %s", web3.utils.fromWei(r, 'ether')));
-            });
-
-            solaExchange.methods.balanceOf(sttwAddress, userWallet.address).call().then(function(r) {
-                $("#sttwInUserSolaExchange").text(sprintf("STTW: %s", web3.utils.fromWei(r, 'ether')));
-            });
-
-            solaExchange.methods.balanceOf(sntwAddress1, userWallet.address).call().then(function(r) {
-                $("#sntwInUserSolaExchange1").text(sprintf("SNTW1: %s", web3.utils.fromWei(r, 'ether')));
-            });
-
-            solaExchange.methods.balanceOf(sntwAddress2, userWallet.address).call().then(function(r) {
-                $("#sntwInUserSolaExchange2").text(sprintf("SNTW2: %s", web3.utils.fromWei(r, 'ether')));
-            });
-
-            solaExchange.methods.balanceOf(sntwAddress3, userWallet.address).call().then(function(r) {
-                $("#sntwInUserSolaExchange3").text(sprintf("SNTW3: %s", web3.utils.fromWei(r, 'ether')));
-            });
-        }, 1000);
-
-        $("#loginMask").hide();
-    }
-
-    function canUseUsername(name) {
-        var result;
-        $.ajax({
-            url: "/checkUsername",
-            type: "post",
-            dataType: "html",
-            data: {
-                username: name
-            },
-            async: false,
-            success: function(r) {
-                if (r == "true") {
-                    result = true;
-                } else {
-                    result = false;
-                    alert(name + " has been used!");
-                }
-            },
-        });
-
-        return result;
-    }
-
-    function signUp(username, password, address, privateKey) {
-        var result;
-        $.ajax({
-            url: "/signUp",
-            type: "post",
-            dataType: "html",
-            data: {
-                username: username,
-                password: password,
-                address: address,
-                privateKey: privateKey
-            },
-            async: false,
-            success: function(r) {
-                if (r == "true") {
-                    result = true;
-                } else {
-                    result = false;
-                }
-            },
-        });
-
-        return result;
-    }
-
-    function getPrivateKey(username, password) {
-        var privateKey;
-        $.ajax({
-            url: "/signIn",
-            type: "post",
-            dataType: "html",
-            data: {
-                username: username,
-                password: password
-            },
-            async: false,
-            success: function(r) {
-                if (r == "false") {
-                    alert("no this user or password is wrong");
-                } else {
-                    privateKey = r;
-                }
-            },
-        });
-
-        return privateKey;
-    }
-
-    function login(username, password) {
-        var privateKey = getPrivateKey(username, password);
-        if (privateKey) {
-            loadUserWallet(username, privateKey);
-            return true;
-        }
-        return false;
-    }
-
     $(function() {
+        if (typeof web3 !== 'undefined') {
+            web3 = new Web3(web3.currentProvider);
+        } else {
+            // set the provider you want from Web3.providers
+            web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
+        }
+
+        var sttw = new web3.eth.Contract(sttwABI, sttwAddress);
+        var sttwStore = new web3.eth.Contract(sttwStoreABI, sttwStoreAddress);
+        var sntw1 = new web3.eth.Contract(sntwABI, sntwAddress1);
+        var sntw2 = new web3.eth.Contract(sntwABI, sntwAddress2);
+        var sntw3 = new web3.eth.Contract(sntwABI, sntwAddress3);
+        var solaExchange = new web3.eth.Contract(solaExchangeABI, solaExchangeAddress);
+
+        var feeRate = 0.005;
+        var autoSwitchAccount = true; //如要測試多帳號, 可改成false
+        var account;
+        var currentBlock;
+        var dataInitialized = false;
+        var eventList = {};
+        var orderBook = {};
+        var myOrders = {};
+        var allProject;
+        var myBar;
+        var userId;
+
+        var provider = new ethers.providers.JsonRpcProvider('https://kovan.infura.io', true, 42);
+        var adminPrivateKey = "0x70394e1a35f52536a07c3dc8dbc3b8f9219511130d8bfaa48518dc497ab00bd8";
+        var adminWallet = new ethers.Wallet(adminPrivateKey, provider);
+        var userWallet, useRefreshTimer;
+
+        function openTradeDialog(logId) {
+            var e = eventList[logId];
+            var rv = e.returnValues;
+
+            var type, sntw, sttw, rate;
+            if (sttwAddress == rv.tokenGive) {
+                type = "Sell";
+                sntw = web3.utils.fromWei(rv.amountGet, 'ether');
+                sttw = web3.utils.fromWei(rv.amountGive, 'ether');
+                rate = sttw / sntw;
+            } else {
+                type = "Buy";
+                sntw = web3.utils.fromWei(rv.amountGive, 'ether');
+                sttw = web3.utils.fromWei(rv.amountGet, 'ether');
+                rate = sttw / sntw;
+            }
+
+            $("#tradeDialogTradeType").text(type);
+            $("#tradeDialogDescription").html(sprintf("Order <br/> %s SNTW @ %s SNTW/STTW <br/> Expires in %s blocks", sntw, rate, rv.expires));
+            $("#tradeDialogAmountLabel").text("SNTW");
+            $("#tradeDialogAmount").val(sntw);
+            $("#tradeDialogSTTW").val(sttw);
+            $("#tradeDialogFee").val(sttw * feeRate);
+
+            $("#tradeDialog").data("logId", logId);
+            $("#tradeDialog").data("rate", rate);
+
+            $("#tradeMask").show();
+        }
+
+        $("#openSignUpDialog").click(function() {
+            $("#signUpMask").show();
+        });
+
+        $("#openLoginDialog").click(function() {
+            $("#loginMask").show();
+        });
         $("#signUpConfirm").click(function() {
             var username = $("#signUpName").val();
             var password = $("#signUpPassword").val();
@@ -401,8 +269,11 @@
             refreshPriceChart(1510129795);
         });
 
+        var prepareBuy;
         $("#sttwAmountPay").bind('keyup mouseup', function() {
-            var totalPay = $(this).val();
+            prepareBuy = [];
+
+            var totalPay = parseInt($(this).val());
             var sortable = sortForOrderBook(orderBook.orders);
             console.log(sortable);
             var sellOrders = sortable.filter(function(o) {
@@ -423,10 +294,12 @@
                     totalGet += o.remained;
                     realPay += o.remained * o.rate;
                     totalPay -= o.remained * o.rate;
+                    prepareBuy.push({ order: o, amountGet: o.remained, amountGive: o.remained * o.rate });
                 } else if (totalPay > 0) {
                     var rest = totalPay / o.rate;
                     totalGet += rest;
                     realPay += totalPay;
+                    prepareBuy.push({ order: o, amountGet: rest, amountGive: totalPay });
                     totalPay = 0;
                 } else {
                     break;
@@ -436,11 +309,15 @@
                 $("#sttwAmountRest").text(sprintf("(剩餘STTW:%s)", totalPay));
             }
             $("#sntwAmountGet").val(totalGet);
-            $("#sntwBuyRate").text(sprintf("均價:%s(最低賣出價:%s)", realPay/totalGet, bestRate));
+            $("#sntwBuyRate").text(sprintf("均價:%s(最低賣出價:%s)", realPay / totalGet, bestRate));
+            console.log(prepareBuy);
         });
 
+        var prepareSell;
         $("#sntwAmountPay").bind('keyup mouseup', function() {
-            var totalPay = $(this).val();
+            prepareSell = [];
+
+            var totalPay = parseInt($(this).val());
             var sortable = sortForOrderBook(orderBook.orders);
             console.log(sortable);
             var buyOrders = sortable.filter(function(o) {
@@ -461,10 +338,12 @@
                     totalGet += o.remained * o.rate;
                     realPay += o.remained;
                     totalPay -= o.remained;
+                    prepareSell.push({ order: o, amountGet: o.remained * o.rate, amountGive: o.remained });
                 } else if (totalPay > 0) {
                     var rest = totalPay * o.rate;
                     totalGet += rest;
                     realPay += totalPay;
+                    prepareSell.push({ order: o, amountGet: rest, amountGive: totalPay });
                     totalPay = 0;
                 } else {
                     break;
@@ -474,7 +353,8 @@
                 $("#sntwAmountRest").text(sprintf("(剩餘SNTW:%s)", totalPay));
             }
             $("#sttwAmountGet").val(totalGet);
-            $("#sntwSellRate").text(sprintf("均價:%s(最高買入價:%s)", totalGet/realPay, bestRate));
+            $("#sntwSellRate").text(sprintf("均價:%s(最高買入價:%s)", totalGet / realPay, bestRate));
+            console.log(prepareSell);
         });
 
         init();
@@ -552,703 +432,864 @@
                 });
             }
         }, 1000);
-    });
 
-    function init() {
-        connectToServer();
+        function init() {
+            connectToServer();
 
-        var map = new GMaps({
-            div: '#map',
-            zoom: 7,
-            lat: 23.6662529,
-            lng: 120.8278127,
-            options: {
-                styles: mapStyle,
-                mapTypeControl: false,
-                fullscreenControl: false,
-                streetViewControl: false
-            }
-        });
-
-        $.getJSON("https://sola-api.herokuapp.com/api/v1/projects", function(data) {
-            allProject = data;
-            var testType = 0;
-            allProject.forEach(function(item, index) {
-                $("#projects tr:last").after(sprintf("<tr data-id='%s'><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>", item.id, "SNTW" + (++testType), item.name, item.date.slice(0, 10), item.capacity, item.decay));
-
-                var p = allProject.find(function(a) {
-                    return a.id == item.id;
-                });
-                p.values = {};
-            });
-        });
-        $.getJSON("https://sola-api.herokuapp.com/api/v1/values", function(json) {
-            console.log(json);
-            json.forEach(function(item, index) {
-                var p = allProject.find(function(a) {
-                    return a.id == item.id;
-                });
-
-                var dt = item.dt.slice(0, 10);
-                var v = p.values[dt];
-                if (v) {
-                    v += item.value;
-                    p.values[dt] = v;
-                } else {
-                    p.values[dt] = item.value;
+            var map = new GMaps({
+                div: '#map',
+                zoom: 7,
+                lat: 23.6662529,
+                lng: 120.8278127,
+                options: {
+                    styles: mapStyle,
+                    mapTypeControl: false,
+                    fullscreenControl: false,
+                    streetViewControl: false
                 }
             });
-            console.log(allProject);
-        });
-    }
 
-    function btnApprove() {
-        var token = $("#token").val();
-        var tokenContract;
-        switch (token) {
-            case "0":
-                tokenContract = sttw;
-                break;
-            case "1":
-                tokenContract = sntw1;
-                break;
-            case "2":
-                tokenContract = sntw2;
-                break;
-            case "3":
-                tokenContract = sntw3;
-                break;
-        }
+            $.getJSON("https://sola-api.herokuapp.com/api/v1/projects", function(data) {
+                allProject = data;
+                var testType = 0;
+                allProject.forEach(function(item, index) {
+                    $("#projects tr:last").after(sprintf("<tr data-id='%s'><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>", item.id, "SNTW" + (++testType), item.name, item.date.slice(0, 10), item.capacity, item.decay));
 
-        var v = $("#walletToken").val();
-        tokenContract.methods.approve(solaExchangeAddress, web3.utils.toWei(v, 'ether')).send({ from: account })
-            .then(console.log);
-    }
-
-    function btnDepositToken() {
-        var token = $("#token").val();
-        var tokenAddress;
-        switch (token) {
-            case "0":
-                tokenAddress = sttwAddress;
-                break;
-            case "1":
-                tokenAddress = sntwAddress1;
-                break;
-            case "2":
-                tokenAddress = sntwAddress2;
-                break;
-            case "3":
-                tokenAddress = sntwAddress3;
-                break;
-        }
-
-        var v = $("#walletToken").val();
-        solaExchange.methods.depositToken(tokenAddress, web3.utils.toWei(v, 'ether')).send({ from: account })
-            .then(console.log);
-    }
-
-    function btnWithdrawToken() {
-        var token = $("#token").val();
-        var tokenAddress;
-        switch (token) {
-            case "0":
-                tokenAddress = sttwAddress;
-                break;
-            case "1":
-                tokenAddress = sntwAddress1;
-                break;
-            case "2":
-                tokenAddress = sntwAddress2;
-                break;
-            case "3":
-                tokenAddress = sntwAddress3;
-                break;
-        }
-
-        var v = $("#walletToken").val();
-        solaExchange.methods.withdrawToken(tokenAddress, web3.utils.toWei(v, 'ether')).send({ from: account })
-            .then(console.log);
-    }
-
-    function btnOrderBuySNTW() {
-        var token = $("#orderToken").val();
-        var sntwAddress;
-        switch (token) {
-            case "1":
-                sntwAddress = sntwAddress1;
-                break;
-            case "2":
-                sntwAddress = sntwAddress2;
-                break;
-            case "3":
-                sntwAddress = sntwAddress3;
-                break;
-        }
-
-        var get = $("#orderSntwToken").val();
-        var give = $("#orderSttwToken").val();
-        var expires = parseInt($('#orderExpires').val()) + currentBlock;
-        var nonce = Date.now();
-        solaExchange.methods.order(sntwAddress, web3.utils.toWei(get, 'ether'), sttwAddress, web3.utils.toWei(give, 'ether'), expires, nonce).send({ from: account })
-            .then(function(r) {
-                console.log(r);
-                refreshOrder();
+                    var p = allProject.find(function(a) {
+                        return a.id == item.id;
+                    });
+                    p.values = {};
+                });
             });
-    }
+            $.getJSON("https://sola-api.herokuapp.com/api/v1/values", function(json) {
+                console.log(json);
+                json.forEach(function(item, index) {
+                    var p = allProject.find(function(a) {
+                        return a.id == item.id;
+                    });
 
-    function btnOrderSellSNTW() {
-        var token = $("#orderToken").val();
-        var sntwAddress;
-        switch (token) {
-            case "1":
-                sntwAddress = sntwAddress1;
-                break;
-            case "2":
-                sntwAddress = sntwAddress2;
-                break;
-            case "3":
-                sntwAddress = sntwAddress3;
-                break;
-        }
-
-        var get = $("#orderSttwToken").val();
-        var give = $("#orderSntwToken").val();
-        var expires = parseInt($('#orderExpires').val()) + currentBlock;
-        var nonce = Date.now();
-        solaExchange.methods.order(sttwAddress, web3.utils.toWei(get, 'ether'), sntwAddress, web3.utils.toWei(give, 'ether'), expires, nonce).send({ from: account })
-            .then(function(r) {
-                console.log(r);
-                refreshOrder();
-            });
-    }
-
-    function refreshOrder() {
-        solaExchange.getPastEvents('Order', {
-                //filter: { myIndexedParam: [20, 23], myOtherIndexedParam: '0x123456789...' }, // Using an array means OR: e.g. 20 or 23
-                fromBlock: 0,
-                toBlock: 'latest'
-            })
-            .then(function(events) {
-                orderBook = { count: 0, orders: {} };
-                myOrders = { count: 0, orders: {} };
-
-                for (var i = 0; i < events.length; ++i) {
-                    var e = events[i];
-                    var rv = e.returnValues;
-                    //console.log(e);
-                    var order, rate, sntw, sntwAddress, sttw, remained;
-                    if (sttwAddress == rv.tokenGive) {
-                        order = "BUY";
-                        sntwAddress = rv.tokenGet;
-                        sntw = web3.utils.fromWei(rv.amountGet, 'ether');
-                        sttw = web3.utils.fromWei(rv.amountGive, 'ether');
-                        rate = sttw / sntw;
-                        color = "lightgreen";
+                    var dt = item.dt.slice(0, 10);
+                    var v = p.values[dt];
+                    if (v) {
+                        v += item.value;
+                        p.values[dt] = v;
                     } else {
-                        order = "SELL";
-                        sntwAddress = rv.tokenGive;
-                        sntw = web3.utils.fromWei(rv.amountGive, 'ether');
-                        sttw = web3.utils.fromWei(rv.amountGet, 'ether');
-                        rate = sttw / sntw;
-                        color = "red";
+                        p.values[dt] = item.value;
                     }
-
-                    var expires = (rv.expires > currentBlock) ? rv.expires - currentBlock : 0;
-
-                    if (expires > 0) {
-                        orderBook.count += 1;
-                        orderBook.orders[e.id] = { logId: e.id, order: order, sntw: sntw, sntwAddress: sntwAddress, sttw: sttw, rate: rate, color: color, nonce: rv.nonce, expires: expires };
-                    }
-
-                    if (rv.user == account) {
-                        myOrders.count += 1;
-                        myOrders.orders[e.id] = { logId: e.id, order: order, sntw: sntw, sntwAddress: sntwAddress, sttw: sttw, rate: rate, color: color, nonce: rv.nonce, expires: expires };
-                    }
-
-                    eventList[e.id] = e;
-                    (function(event) {
-                        solaExchange.methods.amountFilled(rv.tokenGet, rv.amountGet, rv.tokenGive, rv.amountGive, rv.expires, rv.nonce, rv.user, 0, "0x0", "0x0").call()
-                            .then(function(filled) {
-                                var need1 = updateOrderData(orderBook, event.id, filled);
-                                var need2 = updateOrderData(myOrders, event.id, filled);
-                                if (!(need1 || need2)) {
-                                    delete eventList[event.id];
-                                }
-
-                                if (orderBook.count == 0) {
-                                    var sortable = sortForOrderBook(orderBook.orders);
-
-                                    $("#orderBook tr:gt(0)").remove();
-                                    for (var s in sortable) {
-                                        var o = sortable[s][0];
-                                        $("#orderBook tr:last").after(sprintf("<tr id='o_%s' title='click to trade.' style='background: %s' data-logid='%s'><td>%s</td><td>%s</td><td>%s</td><td>[%s/%s]</td><td>%s</td><td>%s</td></tr>", o.nonce, o.color, o.logId, o.order, getTokenName(o.sntwAddress), o.rate, o.remained, o.sntw, o.sttw, o.expires));
-                                    }
-                                }
-
-                                if (myOrders.count == 0) {
-                                    $("#myOrders tr:gt(0)").remove();
-                                    for (var id in myOrders.orders) {
-                                        var o = myOrders.orders[id];
-                                        $("#myOrders tr:last").after(sprintf("<tr id='mo_%s' title='click to cancel.' style='background: %s' data-logid='%s'><td>%s</td><td>%s</td><td>%s</td><td>[%s/%s]</td><td>%s</td><td>%s</td><td>%s</td></tr>", o.nonce, (o.expires > 0 ? 'lightblue' : 'lightgrey'), o.logId, o.order, getTokenName(o.sntwAddress), o.rate, o.remained, o.sntw, o.sttw, o.expires, (o.expires > 0 ? 'alive' : 'expired')));
-                                    }
-                                }
-                            });
-                    })(e);
-                }
+                });
+                console.log(allProject);
             });
-    }
-
-    function getTokenName(address) {
-        switch (address) {
-            case sttwAddress:
-                return "STTW";
-            case sntwAddress1:
-                return "SNTW1";
-            case sntwAddress2:
-                return "SNTW2";
-            case sntwAddress3:
-                return "SNTW3";
-            default:
-                alert("unknown token type");
-                return "unknown";
-        }
-    }
-
-    function updateOrderData(orderData, eventId, filled) {
-        if (orderData.orders[eventId]) {
-            orderData.count -= 1;
-
-            var o = orderData.orders[eventId];
-            if (o.order == "BUY") {
-                filled = web3.utils.fromWei(filled);
-                o.remained = o.sntw - filled;
-            } else {
-                filled = web3.utils.fromWei(filled);
-                o.remained = (o.sttw - filled) * o.sntw / o.sttw;
-            }
-
-            if (o.remained == 0) {
-                delete orderData.orders[eventId];
-            } else {
-                return true; //需要保留event log
-            }
         }
 
-        return false;
-    }
+        function loadUserWallet(username, privateKey) {
+            userWallet = new ethers.Wallet(privateKey, provider);
+            console.log(userWallet);
+            $("#userPanel").show();
+            $("#username").text(sprintf("Username: %s", username));
+            $("#userAccount").text(sprintf("Account: %s", userWallet.address));
 
-    function sortForOrderBook(orders) {
-        var sortable = [];
-        for (var id in orders) {
-            var o = orders[id];
-            sortable.push([o, o.order, o.rate]);
+            if (useRefreshTimer) {
+                clearInterval(useRefreshTimer);
+            }
+            useRefreshTimer = setInterval(function() {
+                userWallet.getBalance().then(function(balance) {
+                    $("#ethInUserWallet").text(sprintf("ETH: %s", ethers.utils.formatEther(balance)));
+                });
+
+                sttw.methods.balanceOf(userWallet.address).call().then(function(r) {
+                    $("#sttwInUserWallet").text(sprintf("STTW: %s", web3.utils.fromWei(r, 'ether')));
+                });
+
+                sntw1.methods.balanceOf(userWallet.address).call().then(function(r) {
+                    $("#sntwInUserWallet1").text(sprintf("SNTW1: %s", web3.utils.fromWei(r, 'ether')));
+                });
+
+                sntw2.methods.balanceOf(userWallet.address).call().then(function(r) {
+                    $("#sntwInUserWallet2").text(sprintf("SNTW2: %s", web3.utils.fromWei(r, 'ether')));
+                });
+
+                sntw3.methods.balanceOf(userWallet.address).call().then(function(r) {
+                    $("#sntwInUserWallet3").text(sprintf("SNTW3: %s", web3.utils.fromWei(r, 'ether')));
+                });
+
+                solaExchange.methods.balanceOf(sttwAddress, userWallet.address).call().then(function(r) {
+                    $("#sttwInUserSolaExchange").text(sprintf("STTW: %s", web3.utils.fromWei(r, 'ether')));
+                });
+
+                solaExchange.methods.balanceOf(sntwAddress1, userWallet.address).call().then(function(r) {
+                    $("#sntwInUserSolaExchange1").text(sprintf("SNTW1: %s", web3.utils.fromWei(r, 'ether')));
+                });
+
+                solaExchange.methods.balanceOf(sntwAddress2, userWallet.address).call().then(function(r) {
+                    $("#sntwInUserSolaExchange2").text(sprintf("SNTW2: %s", web3.utils.fromWei(r, 'ether')));
+                });
+
+                solaExchange.methods.balanceOf(sntwAddress3, userWallet.address).call().then(function(r) {
+                    $("#sntwInUserSolaExchange3").text(sprintf("SNTW3: %s", web3.utils.fromWei(r, 'ether')));
+                });
+            }, 1000);
+
+            $("#loginMask").hide();
         }
 
-        sortable.sort(function(a, b) {
-            if (a[1] != b[1]) {
-                return (a[1] < b[1]) ? 1 : -1;
-            } else {
-                return b[2] - a[2];
+        function canUseUsername(name) {
+            var result;
+            $.ajax({
+                url: "/checkUsername",
+                type: "post",
+                dataType: "html",
+                data: {
+                    username: name
+                },
+                async: false,
+                success: function(r) {
+                    if (r == "true") {
+                        result = true;
+                    } else {
+                        result = false;
+                        alert(name + " has been used!");
+                    }
+                },
+            });
+
+            return result;
+        }
+
+        function signUp(username, password, address, privateKey) {
+            var result;
+            $.ajax({
+                url: "/signUp",
+                type: "post",
+                dataType: "html",
+                data: {
+                    username: username,
+                    password: password,
+                    address: address,
+                    privateKey: privateKey
+                },
+                async: false,
+                success: function(r) {
+                    if (r == "true") {
+                        result = true;
+                    } else {
+                        result = false;
+                    }
+                },
+            });
+
+            return result;
+        }
+
+        function getPrivateKey(username, password) {
+            var privateKey;
+            $.ajax({
+                url: "/signIn",
+                type: "post",
+                dataType: "html",
+                data: {
+                    username: username,
+                    password: password
+                },
+                async: false,
+                success: function(r) {
+                    if (r == "false") {
+                        alert("no this user or password is wrong");
+                    } else {
+                        privateKey = r;
+                    }
+                },
+            });
+
+            return privateKey;
+        }
+
+        function login(username, password) {
+            var privateKey = getPrivateKey(username, password);
+            if (privateKey) {
+                loadUserWallet(username, privateKey);
+                return true;
             }
+            return false;
+        }
+
+        $("#btnApprove").click(function() {
+            var token = $("#token").val();
+            var tokenContract;
+            switch (token) {
+                case "0":
+                    tokenContract = sttw;
+                    break;
+                case "1":
+                    tokenContract = sntw1;
+                    break;
+                case "2":
+                    tokenContract = sntw2;
+                    break;
+                case "3":
+                    tokenContract = sntw3;
+                    break;
+            }
+
+            var v = $("#walletToken").val();
+            tokenContract.methods.approve(solaExchangeAddress, web3.utils.toWei(v, 'ether')).send({ from: account })
+                .then(console.log);
         });
 
-        return sortable;
-    }
+        $("#btnDepositToken").click(function() {
+            var token = $("#token").val();
+            var tokenAddress;
+            switch (token) {
+                case "0":
+                    tokenAddress = sttwAddress;
+                    break;
+                case "1":
+                    tokenAddress = sntwAddress1;
+                    break;
+                case "2":
+                    tokenAddress = sntwAddress2;
+                    break;
+                case "3":
+                    tokenAddress = sntwAddress3;
+                    break;
+            }
 
-    function refreshTrade() {
-        solaExchange.getPastEvents('Trade', {
-                //filter: { myIndexedParam: [20, 23], myOtherIndexedParam: '0x123456789...' }, // Using an array means OR: e.g. 20 or 23
-                fromBlock: 0,
-                toBlock: 'latest'
-            })
-            .then(function(trades) {
-                $("#myTrades tr:gt(0)").remove();
+            var v = $("#walletToken").val();
+            solaExchange.methods.depositToken(tokenAddress, web3.utils.toWei(v, 'ether')).send({ from: account })
+                .then(console.log);
+        });
 
-                for (var i = 0; i < trades.length; i++) {
-                    var rv = trades[i].returnValues;
-                    if (rv.get == account || rv.give == account) {
-                        var order, rate, sntw, sntwAddress, sttw;
+        $("#btnWithdrawToken").click(function() {
+            var token = $("#token").val();
+            var tokenAddress;
+            switch (token) {
+                case "0":
+                    tokenAddress = sttwAddress;
+                    break;
+                case "1":
+                    tokenAddress = sntwAddress1;
+                    break;
+                case "2":
+                    tokenAddress = sntwAddress2;
+                    break;
+                case "3":
+                    tokenAddress = sntwAddress3;
+                    break;
+            }
+
+            var v = $("#walletToken").val();
+            solaExchange.methods.withdrawToken(tokenAddress, web3.utils.toWei(v, 'ether')).send({ from: account })
+                .then(console.log);
+        });
+
+        $("#btnOrderBuySNTW").click(function() {
+            var token = $("#orderToken").val();
+            var sntwAddress;
+            switch (token) {
+                case "1":
+                    sntwAddress = sntwAddress1;
+                    break;
+                case "2":
+                    sntwAddress = sntwAddress2;
+                    break;
+                case "3":
+                    sntwAddress = sntwAddress3;
+                    break;
+            }
+
+            var get = $("#orderSntwToken").val();
+            var give = $("#orderSttwToken").val();
+            var expires = parseInt($('#orderExpires').val()) + currentBlock;
+            var nonce = Date.now();
+            solaExchange.methods.order(sntwAddress, web3.utils.toWei(get, 'ether'), sttwAddress, web3.utils.toWei(give, 'ether'), expires, nonce).send({ from: account })
+                .then(function(r) {
+                    console.log(r);
+                    refreshOrder();
+                });
+        });
+
+        $("#btnOrderSellSNTW").click(function() {
+            var token = $("#orderToken").val();
+            var sntwAddress;
+            switch (token) {
+                case "1":
+                    sntwAddress = sntwAddress1;
+                    break;
+                case "2":
+                    sntwAddress = sntwAddress2;
+                    break;
+                case "3":
+                    sntwAddress = sntwAddress3;
+                    break;
+            }
+
+            var get = $("#orderSttwToken").val();
+            var give = $("#orderSntwToken").val();
+            var expires = parseInt($('#orderExpires').val()) + currentBlock;
+            var nonce = Date.now();
+            solaExchange.methods.order(sttwAddress, web3.utils.toWei(get, 'ether'), sntwAddress, web3.utils.toWei(give, 'ether'), expires, nonce).send({ from: account })
+                .then(function(r) {
+                    console.log(r);
+                    refreshOrder();
+                });
+        });
+
+        function refreshOrder() {
+            solaExchange.getPastEvents('Order', {
+                    //filter: { myIndexedParam: [20, 23], myOtherIndexedParam: '0x123456789...' }, // Using an array means OR: e.g. 20 or 23
+                    fromBlock: 0,
+                    toBlock: 'latest'
+                })
+                .then(function(events) {
+                    orderBook = { count: 0, orders: {} };
+                    myOrders = { count: 0, orders: {} };
+
+                    for (var i = 0; i < events.length; ++i) {
+                        var e = events[i];
+                        var rv = e.returnValues;
+                        //console.log(e);
+                        var order, rate, sntw, sntwAddress, sttw, remained;
                         if (sttwAddress == rv.tokenGive) {
-                            order = (rv.get == account) ? "BUY" : "SELL";
+                            order = "BUY";
                             sntwAddress = rv.tokenGet;
                             sntw = web3.utils.fromWei(rv.amountGet, 'ether');
                             sttw = web3.utils.fromWei(rv.amountGive, 'ether');
                             rate = sttw / sntw;
+                            color = "lightgreen";
                         } else {
-                            order = (rv.give == account) ? "BUY" : "SELL";
+                            order = "SELL";
                             sntwAddress = rv.tokenGive;
                             sntw = web3.utils.fromWei(rv.amountGive, 'ether');
                             sttw = web3.utils.fromWei(rv.amountGet, 'ether');
                             rate = sttw / sntw;
+                            color = "red";
                         }
 
-                        $("#myTrades tr:last").after(sprintf("<tr style='background: lightblue'><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>", order, getTokenName(sntwAddress), rate, sntw, sttw));
-                    }
-                }
+                        var expires = (rv.expires > currentBlock) ? rv.expires - currentBlock : 0;
 
-
-                $("#volumns tr:gt(0)").remove();
-
-                var volumns = {};
-
-                for (var i = 0; i < trades.length; i++) {
-                    var rv = trades[i].returnValues;
-                    if (sttwAddress == rv.tokenGive) {
-                        var address = rv.tokenGet;
-                        var amount = web3.utils.fromWei(rv.amountGet, 'ether');
-                        var price = web3.utils.fromWei(rv.amountGive, 'ether');
-                        var bid = price / amount;
-
-                        var v = volumns[address];
-                        if (v) {
-                            v.amount += parseFloat(amount);
-                            v.bid = bid;
-                        } else {
-                            volumns[address] = { amount: parseFloat(amount), bid: bid };
+                        if (expires > 0) {
+                            orderBook.count += 1;
+                            orderBook.orders[e.id] = { logId: e.id, order: order, sntw: sntw, sntwAddress: sntwAddress, sttw: sttw, rate: rate, color: color, nonce: rv.nonce, expires: expires };
                         }
-                    } else {
-                        var address = rv.tokenGive;
-                        var amount = web3.utils.fromWei(rv.amountGive, 'ether');
-                        var price = web3.utils.fromWei(rv.amountGet, 'ether');
-                        var offer = price / amount;
 
-                        var v = volumns[address];
-                        if (v) {
-                            v.amount += parseFloat(amount);
-                            v.offer = offer;
-                        } else {
-                            volumns[address] = { amount: parseFloat(amount), offer: offer };
+                        if (rv.user == account) {
+                            myOrders.count += 1;
+                            myOrders.orders[e.id] = { logId: e.id, order: order, sntw: sntw, sntwAddress: sntwAddress, sttw: sttw, rate: rate, color: color, nonce: rv.nonce, expires: expires };
                         }
-                    }
-                }
 
-                for (var address in volumns) {
-                    var v = volumns[address];
+                        eventList[e.id] = e;
+                        (function(event) {
+                            solaExchange.methods.amountFilled(rv.tokenGet, rv.amountGet, rv.tokenGive, rv.amountGive, rv.expires, rv.nonce, rv.user, 0, "0x0", "0x0").call()
+                                .then(function(filled) {
+                                    var need1 = updateOrderData(orderBook, event.id, filled);
+                                    var need2 = updateOrderData(myOrders, event.id, filled);
+                                    if (!(need1 || need2)) {
+                                        delete eventList[event.id];
+                                    }
 
-                    $("#volumns tr:last").after(sprintf("<tr style='background: lightblue'><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>", getTokenName(address), v.amount, v.bid ? v.bid : "", v.offer ? v.offer : ""));
-                }
-            });
-    }
+                                    if (orderBook.count == 0) {
+                                        var sortable = sortForOrderBook(orderBook.orders);
 
-    function refreshExpires() {
-        $("#orderBook tr").each(function() {
-            var logId = $(this).data("logid");
-            if (logId) {
-                var e = eventList[logId];
-                var rv = e.returnValues;
-                var expires = (rv.expires > currentBlock) ? rv.expires - currentBlock : 0;
+                                        $("#orderBook tr:gt(0)").remove();
+                                        for (var s in sortable) {
+                                            var o = sortable[s][0];
+                                            $("#orderBook tr:last").after(sprintf("<tr id='o_%s' title='click to trade.' style='background: %s' data-logid='%s'><td>%s</td><td>%s</td><td>%s</td><td>[%s/%s]</td><td>%s</td><td>%s</td></tr>", o.nonce, o.color, o.logId, o.order, getTokenName(o.sntwAddress), o.rate, o.remained, o.sntw, o.sttw, o.expires));
+                                        }
+                                    }
 
-                $(this).find('td:last-child').text(expires);
-                if (expires == 0) {
-                    $(this).hide();
-                }
-            }
-        });
-
-        $("#myOrders tr").each(function() {
-            var logId = $(this).data("logid");
-            if (logId) {
-                var e = eventList[logId];
-                var rv = e.returnValues;
-                var expires = (rv.expires > currentBlock) ? rv.expires - currentBlock : 0;
-
-                $(this).find('td:nth-last-child(2)').text(expires);
-                if (expires == 0) {
-                    $(this).find('td:last-child').text("expired");
-                    $(this).css("background", "lightgrey");
-                }
-            }
-        });
-    }
-
-    function btnTransfer() {
-        var token = $("#transferToken").val();
-        var amount = $("#transferTokenAmount").val();
-        var address = $("#transferAddress").val();
-        switch (token) {
-            case "0":
-                token = sttwAddress;
-                break;
-            case "1":
-                token = sntwAddress1;
-                break;
-            case "2":
-                token = sntwAddress2;
-                break;
-            case "3":
-                token = sntwAddress3;
-                break;
-            default:
-                alert("unknown token type");
-                return;
-        }
-
-        amount = web3.utils.toWei(amount, 'ether');
-        solaExchange.methods.transferToken(token, amount, address).send({ from: account })
-            .then(function(r) {
-                console.log(r);
-            });
-    }
-
-    function refreshTransfer() {
-        solaExchange.getPastEvents('Transfer', {
-                //filter: { myIndexedParam: [20, 23], myOtherIndexedParam: '0x123456789...' }, // Using an array means OR: e.g. 20 or 23
-                fromBlock: 0,
-                toBlock: 'latest'
-            })
-            .then(function(transfer) {
-                console.log(transfer);
-                $("#myTransferFrom tr:gt(0)").remove();
-                $("#myTransferTo tr:gt(0)").remove();
-
-                for (var i = 0; i < transfer.length; i++) {
-                    var rv = transfer[i].returnValues;
-                    var token = getTokenName(rv.token)
-                    var amount = web3.utils.fromWei(rv.amount, 'ether');
-
-                    if (rv.receiver == account) {
-                        $("#myTransferFrom tr:last").after(sprintf("<tr style='background: lightblue'><td>%s</td><td>%s</td><td>%s</td></tr>", token, amount, rv.user));
-                    }
-
-                    if (rv.user == account) {
-                        $("#myTransferTo tr:last").after(sprintf("<tr style='background: lightblue'><td>%s</td><td>%s</td><td>%s</td></tr>", token, amount, rv.receiver));
-                    }
-                }
-            });
-    }
-
-    function buySTTW() {
-        if (!userWallet) {
-            alert("no user login");
-            return;
-        }
-
-        $.ajax({
-            url: "/buy",
-            type: "post",
-            dataType: "html",
-            data: {
-                userId: userId
-            },
-            success: function(result) {
-                var data = JSON.parse(result);
-                console.log(data);
-                for (var name in data) {
-                    $(sprintf("input[name='%s']", name)).val(data[name]);
-                }
-
-                $("#formCreditCard").submit();
-            },
-        });
-    }
-
-    function buy(wallet, amount) {
-        var contract = new ethers.Contract(sttwStoreAddress, sttwStoreABI, adminWallet);
-        var txid;
-        contract.buyToken(wallet.address, ethers.utils.parseEther(amount)).then((transaction) => {
-            console.log("buy");
-            console.log(transaction);
-            txid = transaction.hash;
-            return adminWallet.provider.waitForTransaction(txid)
-        }).then((transaction) => {
-            console.log('Transaction Minded: ' + transaction.hash);
-            console.log(transaction);
-            return adminWallet.provider.getTransaction(txid);
-        }).then((transaction) => {
-            console.log(transaction);
-            return contract.balanceOf(wallet.address);
-        }).then((result) => {
-            console.log(result);
-            approve(wallet, amount);
-        });
-    }
-
-    function approve(wallet, amount) {
-        var contract = new ethers.Contract(sttwAddress, sttwABI, wallet);
-        var txid;
-        contract.approve(solaExchangeAddress, ethers.utils.parseEther(amount)).then((transaction) => {
-            console.log("approve");
-            console.log(transaction);
-            txid = transaction.hash;
-            return wallet.provider.waitForTransaction(txid)
-        }).then((transaction) => {
-            console.log('Transaction Minded: ' + transaction.hash);
-            console.log(transaction);
-            return wallet.provider.getTransaction(txid);
-        }).then((transaction) => {
-            console.log(transaction);
-            return contract.balanceOf(wallet.address);
-        }).then((result) => {
-            console.log(result);
-            deposit(wallet, amount);
-        });
-    }
-
-    function deposit(wallet, amount) {
-        var contract = new ethers.Contract(solaExchangeAddress, solaExchangeABI, wallet);
-        var txid;
-        contract.depositToken(sttwAddress, ethers.utils.parseEther(amount)).then((transaction) => {
-            console.log("deposit");
-            console.log(transaction);
-            txid = transaction.hash;
-            return wallet.provider.waitForTransaction(txid)
-        }).then((transaction) => {
-            console.log('Transaction Minded: ' + transaction.hash);
-            console.log(transaction);
-            return wallet.provider.getTransaction(txid);
-        }).then((transaction) => {
-            console.log(transaction);
-            return contract.balanceOf(sttwAddress, wallet.address);
-        }).then((result) => {
-            console.log(result);
-        });
-    }
-
-    function connectToServer() {
-        var wsuri = "ws://{{.IP}}:{{.Port}}/WS";
-        sock = new WebSocket(wsuri);
-
-        sock.onopen = function() {
-            console.log("connected to " + wsuri);
-        };
-
-        sock.onclose = function(e) {
-            console.log("connection closed (" + e.code + ")");
-            alert("斷線了，準備重連");
-            location.reload();
-        };
-
-        sock.onmessage = function(e) {
-            console.log(e.data);
-            var packet = JSON.parse(e.data);
-            var c = JSON.parse(packet.content);
-
-            switch (packet.opcode) {
-                case "OP_INIT":
-                    userId = c.userID;
-                    //alert(sprintf("you temp ID:%s", userId));
-                    break;
-                case "OP_TRADE_OK":
-                    alert(c.msg + ", 約30秒後入帳");
-                    buy(userWallet, "100");
-                    /*
-                    sttwStore.methods.buyToken(account, web3.utils.toWei(100, 'ether')).send({ from: account })
-                        .then(function(r) {
-                            console.log(r);
-                            sttw.methods.approve(solaExchangeAddress, web3.utils.toWei(100, 'ether')).send({ from: account })
-                                .then(function(r) {
-                                    console.log(r);
-                                    solaExchange.methods.depositToken(sttwAddress, web3.utils.toWei(100, 'ether')).send({ from: account })
-                                        .then(function(r) {
-                                            console.log(r);
-                                        });
+                                    if (myOrders.count == 0) {
+                                        $("#myOrders tr:gt(0)").remove();
+                                        for (var id in myOrders.orders) {
+                                            var o = myOrders.orders[id];
+                                            $("#myOrders tr:last").after(sprintf("<tr id='mo_%s' title='click to cancel.' style='background: %s' data-logid='%s'><td>%s</td><td>%s</td><td>%s</td><td>[%s/%s]</td><td>%s</td><td>%s</td><td>%s</td></tr>", o.nonce, (o.expires > 0 ? 'lightblue' : 'lightgrey'), o.logId, o.order, getTokenName(o.sntwAddress), o.rate, o.remained, o.sntw, o.sttw, o.expires, (o.expires > 0 ? 'alive' : 'expired')));
+                                        }
+                                    }
                                 });
-                        });
+                        })(e);
+                    }
+                });
+        }
 
-                    */
+        function getTokenName(address) {
+            switch (address) {
+                case sttwAddress:
+                    return "STTW";
+                case sntwAddress1:
+                    return "SNTW1";
+                case sntwAddress2:
+                    return "SNTW2";
+                case sntwAddress3:
+                    return "SNTW3";
+                default:
+                    alert("unknown token type");
+                    return "unknown";
+            }
+        }
+
+        function updateOrderData(orderData, eventId, filled) {
+            if (orderData.orders[eventId]) {
+                orderData.count -= 1;
+
+                var o = orderData.orders[eventId];
+                if (o.order == "BUY") {
+                    filled = web3.utils.fromWei(filled);
+                    o.remained = o.sntw - filled;
+                } else {
+                    filled = web3.utils.fromWei(filled);
+                    o.remained = (o.sttw - filled) * o.sntw / o.sttw;
+                }
+
+                if (o.remained == 0) {
+                    delete orderData.orders[eventId];
+                } else {
+                    return true; //需要保留event log
+                }
+            }
+
+            return false;
+        }
+
+        function sortForOrderBook(orders) {
+            var sortable = [];
+            for (var id in orders) {
+                var o = orders[id];
+                sortable.push([o, o.order, o.rate]);
+            }
+
+            sortable.sort(function(a, b) {
+                if (a[1] != b[1]) {
+                    return (a[1] < b[1]) ? 1 : -1;
+                } else {
+                    return b[2] - a[2];
+                }
+            });
+
+            return sortable;
+        }
+
+        function refreshTrade() {
+            solaExchange.getPastEvents('Trade', {
+                    //filter: { myIndexedParam: [20, 23], myOtherIndexedParam: '0x123456789...' }, // Using an array means OR: e.g. 20 or 23
+                    fromBlock: 0,
+                    toBlock: 'latest'
+                })
+                .then(function(trades) {
+                    $("#myTrades tr:gt(0)").remove();
+
+                    for (var i = 0; i < trades.length; i++) {
+                        var rv = trades[i].returnValues;
+                        if (rv.get == account || rv.give == account) {
+                            var order, rate, sntw, sntwAddress, sttw;
+                            if (sttwAddress == rv.tokenGive) {
+                                order = (rv.get == account) ? "BUY" : "SELL";
+                                sntwAddress = rv.tokenGet;
+                                sntw = web3.utils.fromWei(rv.amountGet, 'ether');
+                                sttw = web3.utils.fromWei(rv.amountGive, 'ether');
+                                rate = sttw / sntw;
+                            } else {
+                                order = (rv.give == account) ? "BUY" : "SELL";
+                                sntwAddress = rv.tokenGive;
+                                sntw = web3.utils.fromWei(rv.amountGive, 'ether');
+                                sttw = web3.utils.fromWei(rv.amountGet, 'ether');
+                                rate = sttw / sntw;
+                            }
+
+                            $("#myTrades tr:last").after(sprintf("<tr style='background: lightblue'><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>", order, getTokenName(sntwAddress), rate, sntw, sttw));
+                        }
+                    }
+
+
+                    $("#volumns tr:gt(0)").remove();
+
+                    var volumns = {};
+
+                    for (var i = 0; i < trades.length; i++) {
+                        var rv = trades[i].returnValues;
+                        if (sttwAddress == rv.tokenGive) {
+                            var address = rv.tokenGet;
+                            var amount = web3.utils.fromWei(rv.amountGet, 'ether');
+                            var price = web3.utils.fromWei(rv.amountGive, 'ether');
+                            var bid = price / amount;
+
+                            var v = volumns[address];
+                            if (v) {
+                                v.amount += parseFloat(amount);
+                                v.bid = bid;
+                            } else {
+                                volumns[address] = { amount: parseFloat(amount), bid: bid };
+                            }
+                        } else {
+                            var address = rv.tokenGive;
+                            var amount = web3.utils.fromWei(rv.amountGive, 'ether');
+                            var price = web3.utils.fromWei(rv.amountGet, 'ether');
+                            var offer = price / amount;
+
+                            var v = volumns[address];
+                            if (v) {
+                                v.amount += parseFloat(amount);
+                                v.offer = offer;
+                            } else {
+                                volumns[address] = { amount: parseFloat(amount), offer: offer };
+                            }
+                        }
+                    }
+
+                    for (var address in volumns) {
+                        var v = volumns[address];
+
+                        $("#volumns tr:last").after(sprintf("<tr style='background: lightblue'><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>", getTokenName(address), v.amount, v.bid ? v.bid : "", v.offer ? v.offer : ""));
+                    }
+                });
+        }
+
+        function refreshExpires() {
+            $("#orderBook tr").each(function() {
+                var logId = $(this).data("logid");
+                if (logId) {
+                    var e = eventList[logId];
+                    var rv = e.returnValues;
+                    var expires = (rv.expires > currentBlock) ? rv.expires - currentBlock : 0;
+
+                    $(this).find('td:last-child').text(expires);
+                    if (expires == 0) {
+                        $(this).hide();
+                    }
+                }
+            });
+
+            $("#myOrders tr").each(function() {
+                var logId = $(this).data("logid");
+                if (logId) {
+                    var e = eventList[logId];
+                    var rv = e.returnValues;
+                    var expires = (rv.expires > currentBlock) ? rv.expires - currentBlock : 0;
+
+                    $(this).find('td:nth-last-child(2)').text(expires);
+                    if (expires == 0) {
+                        $(this).find('td:last-child').text("expired");
+                        $(this).css("background", "lightgrey");
+                    }
+                }
+            });
+        }
+
+        $("#btnTransfer").click(function() {
+            var token = $("#transferToken").val();
+            var amount = $("#transferTokenAmount").val();
+            var address = $("#transferAddress").val();
+            switch (token) {
+                case "0":
+                    token = sttwAddress;
+                    break;
+                case "1":
+                    token = sntwAddress1;
+                    break;
+                case "2":
+                    token = sntwAddress2;
+                    break;
+                case "3":
+                    token = sntwAddress3;
                     break;
                 default:
-                    console.log("unknown packet");
+                    alert("unknown token type");
+                    return;
+            }
+
+            amount = web3.utils.toWei(amount, 'ether');
+            solaExchange.methods.transferToken(token, amount, address).send({ from: account })
+                .then(function(r) {
+                    console.log(r);
+                });
+        });
+
+        function refreshTransfer() {
+            solaExchange.getPastEvents('Transfer', {
+                    //filter: { myIndexedParam: [20, 23], myOtherIndexedParam: '0x123456789...' }, // Using an array means OR: e.g. 20 or 23
+                    fromBlock: 0,
+                    toBlock: 'latest'
+                })
+                .then(function(transfer) {
+                    console.log(transfer);
+                    $("#myTransferFrom tr:gt(0)").remove();
+                    $("#myTransferTo tr:gt(0)").remove();
+
+                    for (var i = 0; i < transfer.length; i++) {
+                        var rv = transfer[i].returnValues;
+                        var token = getTokenName(rv.token)
+                        var amount = web3.utils.fromWei(rv.amount, 'ether');
+
+                        if (rv.receiver == account) {
+                            $("#myTransferFrom tr:last").after(sprintf("<tr style='background: lightblue'><td>%s</td><td>%s</td><td>%s</td></tr>", token, amount, rv.user));
+                        }
+
+                        if (rv.user == account) {
+                            $("#myTransferTo tr:last").after(sprintf("<tr style='background: lightblue'><td>%s</td><td>%s</td><td>%s</td></tr>", token, amount, rv.receiver));
+                        }
+                    }
+                });
+        }
+
+        $("#buySTTW").click(function() {
+            if (!userWallet) {
+                alert("no user login");
+                return;
+            }
+
+            $.ajax({
+                url: "/buy",
+                type: "post",
+                dataType: "html",
+                data: {
+                    userId: userId
+                },
+                success: function(result) {
+                    var data = JSON.parse(result);
+                    console.log(data);
+                    for (var name in data) {
+                        $(sprintf("input[name='%s']", name)).val(data[name]);
+                    }
+
+                    $("#formCreditCard").submit();
+                },
+            });
+        });
+
+        function buy(wallet, amount) {
+            var contract = new ethers.Contract(sttwStoreAddress, sttwStoreABI, adminWallet);
+            var txid;
+            contract.buyToken(wallet.address, ethers.utils.parseEther(amount)).then((transaction) => {
+                console.log("buy");
+                console.log(transaction);
+                txid = transaction.hash;
+                return adminWallet.provider.waitForTransaction(txid)
+            }).then((transaction) => {
+                console.log('Transaction Minded: ' + transaction.hash);
+                console.log(transaction);
+                return adminWallet.provider.getTransaction(txid);
+            }).then((transaction) => {
+                console.log(transaction);
+                return contract.balanceOf(wallet.address);
+            }).then((result) => {
+                console.log(result);
+                approve(wallet, amount);
+            });
+        }
+
+        function approve(wallet, amount) {
+            var contract = new ethers.Contract(sttwAddress, sttwABI, wallet);
+            var txid;
+            contract.approve(solaExchangeAddress, ethers.utils.parseEther(amount)).then((transaction) => {
+                console.log("approve");
+                console.log(transaction);
+                txid = transaction.hash;
+                return wallet.provider.waitForTransaction(txid)
+            }).then((transaction) => {
+                console.log('Transaction Minded: ' + transaction.hash);
+                console.log(transaction);
+                return wallet.provider.getTransaction(txid);
+            }).then((transaction) => {
+                console.log(transaction);
+                return contract.balanceOf(wallet.address);
+            }).then((result) => {
+                console.log(result);
+                deposit(wallet, amount);
+            });
+        }
+
+        function deposit(wallet, amount) {
+            var contract = new ethers.Contract(solaExchangeAddress, solaExchangeABI, wallet);
+            var txid;
+            contract.depositToken(sttwAddress, ethers.utils.parseEther(amount)).then((transaction) => {
+                console.log("deposit");
+                console.log(transaction);
+                txid = transaction.hash;
+                return wallet.provider.waitForTransaction(txid)
+            }).then((transaction) => {
+                console.log('Transaction Minded: ' + transaction.hash);
+                console.log(transaction);
+                return wallet.provider.getTransaction(txid);
+            }).then((transaction) => {
+                console.log(transaction);
+                return contract.balanceOf(sttwAddress, wallet.address);
+            }).then((result) => {
+                console.log(result);
+            });
+        }
+
+        function connectToServer() {
+            var wsuri = "ws://{{.IP}}:{{.Port}}/WS";
+            sock = new WebSocket(wsuri);
+
+            sock.onopen = function() {
+                console.log("connected to " + wsuri);
+            };
+
+            sock.onclose = function(e) {
+                console.log("connection closed (" + e.code + ")");
+                alert("斷線了，準備重連");
+                location.reload();
+            };
+
+            sock.onmessage = function(e) {
+                console.log(e.data);
+                var packet = JSON.parse(e.data);
+                var c = JSON.parse(packet.content);
+
+                switch (packet.opcode) {
+                    case "OP_INIT":
+                        userId = c.userID;
+                        //alert(sprintf("you temp ID:%s", userId));
+                        break;
+                    case "OP_TRADE_OK":
+                        alert(c.msg + ", 約30秒後入帳");
+                        buy(userWallet, "100");
+                        /*
+                        sttwStore.methods.buyToken(account, web3.utils.toWei(100, 'ether')).send({ from: account })
+                            .then(function(r) {
+                                console.log(r);
+                                sttw.methods.approve(solaExchangeAddress, web3.utils.toWei(100, 'ether')).send({ from: account })
+                                    .then(function(r) {
+                                        console.log(r);
+                                        solaExchange.methods.depositToken(sttwAddress, web3.utils.toWei(100, 'ether')).send({ from: account })
+                                            .then(function(r) {
+                                                console.log(r);
+                                            });
+                                    });
+                            });
+
+                        */
+                        break;
+                    default:
+                        console.log("unknown packet");
+                        break;
+                }
+            };
+        }
+
+        function toLocalTimestamp(timestamp) {
+            var d = new Date();
+            return timestamp - d.getTimezoneOffset() * 60 * 1000;
+        }
+
+        function refreshPriceChart(today) {
+            var token = $("#priceChartToken").val();
+            var sntwAddress;
+            switch (token) {
+                case "1":
+                    sntwAddress = sntwAddress1;
+                    break;
+                case "2":
+                    sntwAddress = sntwAddress2;
+                    break;
+                case "3":
+                    sntwAddress = sntwAddress3;
                     break;
             }
-        };
-    }
+            $.ajax({
+                url: "/getTrade",
+                type: "post",
+                dataType: "html",
+                data: {
+                    timestamp: today
+                },
+                async: false,
+                success: function(r) {
+                    console.log(r);
+                    var trades = JSON.parse(r);
+                    console.log(trades);
 
-    function toLocalTimestamp(timestamp) {
-        var d = new Date();
-        return timestamp - d.getTimezoneOffset() * 60 * 1000;
-    }
+                    var data = [];
 
-    function refreshPriceChart(today) {
-        var token = $("#priceChartToken").val();
-        var sntwAddress;
-        switch (token) {
-            case "1":
-                sntwAddress = sntwAddress1;
-                break;
-            case "2":
-                sntwAddress = sntwAddress2;
-                break;
-            case "3":
-                sntwAddress = sntwAddress3;
-                break;
+                    for (var i = 0; i < trades.length; i++) {
+                        var t = trades[i];
+                        var address, amount, price;
+                        if (sttwAddress == t.tokenGive) {
+                            address = t.tokenGet;
+                            amount = web3.utils.fromWei(t.amountGet, 'ether');
+                            price = web3.utils.fromWei(t.amountGive, 'ether');
+                        } else {
+                            address = t.tokenGive;
+                            amount = web3.utils.fromWei(t.amountGive, 'ether');
+                            price = web3.utils.fromWei(t.amountGet, 'ether');
+                        }
+
+                        if (address != sntwAddress) {
+                            continue;
+                        }
+
+                        var rate = price / amount;
+
+                        var timeIndex = Math.floor(t.timestamp / 300) * 300 * 1000;
+                        if (data.length == 0 || data[data.length - 1][0] != toLocalTimestamp(timeIndex)) {
+                            data.push([toLocalTimestamp(timeIndex), rate, rate, rate, rate]);
+                        } else {
+                            var stick = data[data.length - 1];
+                            if (rate > stick[2]) {
+                                stick[2] = rate;
+                            }
+                            if (rate < stick[3]) {
+                                stick[3] = rate;
+                            }
+                            stick[4] = rate;
+                        }
+                    }
+
+                    Highcharts.stockChart('container', {
+                        rangeSelector: {
+                            selected: 1
+                        },
+
+                        title: {
+                            text: $("#priceChartToken option:selected").text()
+                        },
+
+                        series: [{
+                            type: 'candlestick',
+                            name: $("#priceChartToken option:selected").text() + 'Price',
+                            data: data
+                        }]
+                    });
+                },
+            });
         }
-        $.ajax({
-            url: "/getTrade",
-            type: "post",
-            dataType: "html",
-            data: {
-                timestamp: today
-            },
-            async: false,
-            success: function(r) {
-                console.log(r);
-                var trades = JSON.parse(r);
-                console.log(trades);
 
-                var data = [];
+        function serialTradeSNTW(prepare) {
+            if (prepare.length == 0) {
+                refreshOrder();
+                return;
+            }
 
-                for (var i = 0; i < trades.length; i++) {
-                    var t = trades[i];
-                    var address, amount, price;
-                    if (sttwAddress == t.tokenGive) {
-                        address = t.tokenGet;
-                        amount = web3.utils.fromWei(t.amountGet, 'ether');
-                        price = web3.utils.fromWei(t.amountGive, 'ether');
-                    } else {
-                        address = t.tokenGive;
-                        amount = web3.utils.fromWei(t.amountGive, 'ether');
-                        price = web3.utils.fromWei(t.amountGet, 'ether');
-                    }
+            var item = prepare.shift();
+            var e = eventList[item.order.logId];
+            var rv = e.returnValues;
 
-                    if (address != sntwAddress) {
-                        continue;
-                    }
+            var r = e.signature.slice(0, 34);
+            var s = '0x' + e.signature.slice(34, 66);
+            var v = '0x' + e.signature.slice(66, 68);
+            v = web3.utils.toDecimal(v) + 27;
 
-                    var rate = price / amount;
+            var contract = new ethers.Contract(solaExchangeAddress, solaExchangeABI, userWallet);
+            var txid;
+            contract.trade(rv.tokenGet, rv.amountGet, rv.tokenGive, rv.amountGive, rv.expires, rv.nonce, rv.user, v, r, s, ethers.utils.parseEther(item.amountGive.toString())).then((transaction) => {
+                console.log(transaction);
+                txid = transaction.hash;
+                return userWallet.provider.waitForTransaction(txid)
+            }).then((transaction) => {
+                console.log('Transaction Minded: ' + transaction.hash);
+                console.log(transaction);
+                serialTradeSNTW(prepare);
+            });
+        }
 
-                    var timeIndex = Math.floor(t.timestamp / 300) * 300 * 1000;
-                    if (data.length == 0 || data[data.length - 1][0] != toLocalTimestamp(timeIndex)) {
-                        data.push([toLocalTimestamp(timeIndex), rate, rate, rate, rate]);
-                    } else {
-                        var stick = data[data.length - 1];
-                        if (rate > stick[2]) {
-                            stick[2] = rate;
-                        }
-                        if (rate < stick[3]) {
-                            stick[3] = rate;
-                        }
-                        stick[4] = rate;
-                    }
-                }
-
-                Highcharts.stockChart('container', {
-                    rangeSelector: {
-                        selected: 1
-                    },
-
-                    title: {
-                        text: $("#priceChartToken option:selected").text()
-                    },
-
-                    series: [{
-                        type: 'candlestick',
-                        name: $("#priceChartToken option:selected").text() + 'Price',
-                        data: data
-                    }]
-                });
-            },
+        $("#buySNTW").click(function() {
+            alert("buySNTW: " + $("#sttwAmountPay").val());
+            serialTradeSNTW(prepareBuy);
         });
-    }
 
-    function buySNTW() {
-        alert("buySNTW: " + $("#sttwAmountPay").val());
-    }
-
-    function sellSNTW() {
-        alert("sellSNTW: " + $("#sntwAmountPay").val());
-    }
+        $("#sellSNTW").click(function() {
+            alert("sellSNTW: " + $("#sntwAmountPay").val());
+            serialTradeSNTW(prepareSell);
+        });
+    });
     </script>
 </head>
 
@@ -1257,9 +1298,9 @@
         <tr>
             <td style="width:20%; border-style: solid; border-width: 1px; vertical-align: top;">
                 <div>一般投資人:</div>
-                <button type="button" onclick="openSignUpDialog();">Sign Up</button>
-                <button type="button" onclick="openLoginDialog();">Login</button>
-                <button type="button" onclick="buySTTW();">購買100STTW</button>
+                <button type="button" id="openSignUpDialog">Sign Up</button>
+                <button type="button" id="openLoginDialog">Login</button>
+                <button type="button" id="buySTTW">購買100STTW</button>
                 <div id="userPanel" hidden=true>
                     <div id="username"></div>
                     <br/>
@@ -1291,7 +1332,7 @@
                     <input id="sntwAmountGet" type="number" value=0 disabled="true"></input>
                     <br/>
                     <label id="sntwBuyRate"></label>
-                    <button type="button" onclick="buySNTW();">購買SNTW</button>
+                    <button type="button" id="buySNTW">購買SNTW</button>
                     <br/>
                     <br/>
                     <select id="sntwTokenSell">
@@ -1306,7 +1347,7 @@
                     <input id="sttwAmountGet" type="number" value=0 disabled="true"></input>
                     <br/>
                     <label id="sntwSellRate"></label>
-                    <button type="button" onclick="sellSNTW();">賣出SNTW</button>
+                    <button type="button" id="sellSNTW">賣出SNTW</button>
                     <br/>
                     <br/>
                     <label>TODO List:</label>
@@ -1354,9 +1395,9 @@
                     <option value="3">SNTW3</option>
                 </select>
                 <input id="walletToken" type="number" value=0></input>
-                <button type="button" onclick="btnApprove()">Approve</button>
-                <button type="button" onclick="btnDepositToken()">Deposit</button>
-                <button type="button" onclick="btnWithdrawToken()">Withdraw</button>
+                <button type="button" id="btnApprove">Approve</button>
+                <button type="button" id="btnDepositToken">Deposit</button>
+                <button type="button" id="btnWithdrawToken">Withdraw</button>
                 <hr/>
                 <!--select id="generateToken">
                 <option value="1">SNTW1</option>
@@ -1376,7 +1417,7 @@
                 <input id="transferTokenAmount" type="number" value=0></input>
                 <label>Receiver Address:</label>
                 <input id="transferAddress" type="text"></input>
-                <button type="button" onclick="btnTransfer()">transfer</button>
+                <button type="button" id="btnTransfer">transfer</button>
                 <hr/>
                 <select id="orderToken">
                     <option value="1">SNTW1</option>
@@ -1389,8 +1430,8 @@
                 <input id="orderSttwToken" type="number" value=0></input>
                 <label>Expires:</label>
                 <input id="orderExpires" type="number" value=0></input>
-                <button type="button" onclick="btnOrderBuySNTW()">order (buy SNTW)</button>
-                <button type="button" onclick="btnOrderSellSNTW()">order (sell SNTW)</button>
+                <button type="button" id="btnOrderBuySNTW">order (buy SNTW)</button>
+                <button type="button" id="btnOrderSellSNTW">order (sell SNTW)</button>
                 <hr/>
                 <div style="overflow: auto;">
                     <span style="float: left">
