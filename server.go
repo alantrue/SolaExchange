@@ -64,6 +64,7 @@ func main() {
 	go packetHandler.Do()
 
 	http.HandleFunc("/WS", handlerWS)
+	http.HandleFunc("/SolaExchange", handlerSolaExchange)
 	http.HandleFunc("/demo", handlerDemo)
 	http.HandleFunc("/buy", handlerBuy)
 	http.HandleFunc("/test", handlerTest)
@@ -138,6 +139,28 @@ func handlerOrderComplete(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func handlerSolaExchange(w http.ResponseWriter, r *http.Request) {
+	t, err := template.ParseFiles("view/solaExchange.html")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	data := struct {
+		IP      string
+		Port    string
+		Uncache string
+	}{
+		IP:      "localhost", //"alantrue.ddns.net",
+		Port:    gPort,
+		Uncache: time.Now().Format("20060102150405"),
+	}
+
+	err = t.Execute(w, data)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
 func handlerDemo(w http.ResponseWriter, r *http.Request) {
 	t, err := template.ParseFiles("view/demo.html")
 	if err != nil {
@@ -198,7 +221,7 @@ func handlerGatherAgent(w http.ResponseWriter, r *http.Request) {
 
 func handlerLogTrade(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
-	info := make([]tradeInfo, 0)
+	info := []tradeInfo{}
 	err := decoder.Decode(&info)
 	if err != nil {
 		panic(err)

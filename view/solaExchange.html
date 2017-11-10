@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <!--必須在less.js之前-->
+    <link rel="stylesheet/less" type="text/css" href="css/solaExchange.less?{{.Uncache}}">
+    <script type='text/javascript' src='js/less.min.js'></script>
+    <!--script type="text/javascript" src="js/jquery.js"></script>
+    <script type="text/javascript" src="js/sprintf.js"></script>
+    <script type="text/javascript" src="js/web3.min.js"></script>
+    <script type="text/javascript" src="js/ethers.js?{{.Uncache}}"></script>
+    <script type="text/javascript" src="js/Chart.min.js"></script>
+    <script type="text/javascript" src="js/highstock.js"></script>
+    <script type="text/javascript" src="http://maps.google.com/maps/api/js?key=AIzaSyCQ3UTayHzAcoPXJUM3Ag_-FBxII1o6fNg"></script>
+    <script type="text/javascript" src="js/gmaps.js?{{.Uncache}}"></script>
+    <script type="text/javascript" src="data/sttwABI.js?{{.Uncache}}"></script>
+    <script type="text/javascript" src="data/sttwStoreABI.js?{{.Uncache}}"></script>
+    <script type="text/javascript" src="data/sntwABI.js?{{.Uncache}}"></script>
+    <script type="text/javascript" src="data/solaExchangeABI.js?{{.Uncache}}"></script>
+    <script type="text/javascript" src="data/map_style.json?{{.Uncache}}"></script-->
+    <script type="text/javascript">
+    </script>
+</head>
+
+<body>
+    <title>Sola Exchange</title>
+    <page>
+        <header>
+            <label>SOLA</label>
+            <select id="sntwTokenType">
+                <option value="1">SNTW1</option>
+                <option value="2">SNTW2</option>
+                <option value="3">SNTW3</option>
+            </select>
+            <label id="userAccount">0xAeD134</label>
+        </header>
+        <main>
+            <div class="mainLeft">
+                <div class="mainLeftUp block">
+                    <label class="title">BALANCES</label>
+                    <div class="content">
+                        <div id="balanceSTTW">STTW</div>
+                        <div id="balanceSNTW1">SNTW1</div>
+                        <div id="balanceSNTW2">SNTW2</div>
+                        <div id="balanceSNTW3">SNTW3</div>
+                    </div>
+                </div>
+                <div class="mainLeftDown block">
+                    <label class="title">NEW ORDER</label>
+                    <div class="content">
+                        test
+                    </div>
+                </div>
+            </div>
+            <div class="mainRight">
+                <div class="mainRightUp block">
+                    <label class="title">CHART</label>
+                    <div class="content">
+                        test
+                    </div>
+                </div>
+                <div class="mainRightDown">
+                    <div class="mainRightDownRight block">
+                        <label class="title">OPEN ORDERS</label>
+                        <div class="content">
+                            test
+                        </div>
+                    </div>
+                    <div class="mainRightDownLeft block">
+                        <label class="title">ORDER BOOK</label>
+                        <div class="content">
+                            test
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+        <footer>
+            <div class="block">
+                <label class="title">MY TRADE HISTORY</label>
+                <div class="content">
+                    test
+                </div>
+            </div>
+        </footer>
+    </page>
+</body>
+
+</html>

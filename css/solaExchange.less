@@ -1,0 +1,101 @@
+@headerHeight: 2em;
+@body1Height: 20em;
+@margin: 0.5em;
+
+* {
+    margin: 0;
+    padding: 0;
+}
+
+page {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+header {
+    height: @headerHeight;
+    background: lightgrey;
+    margin-bottom: @margin;
+}
+
+main {
+    height: @body1Height;
+    background: lightgrey;
+    display: flex;
+}
+
+footer {
+    flex: 1;
+    background: lightgrey;
+    margin-top: @margin;
+}
+
+.mainLeft {
+    width: 20em;
+    //background: blue;
+    display: flex;
+    flex-direction: column;    
+    margin-right: @margin;
+}
+
+.mainRight {
+    flex: 1;
+    //background: green;
+    display: flex;
+    flex-direction: column;
+}
+
+.mainLeftUp {
+    height: 8em;
+    background: lightskyblue;
+    margin-bottom: @margin;
+}
+
+.mainLeftDown {
+    flex: 1;
+    background: lightblue;
+}
+
+.mainRightUp {
+	flex: 1;
+	background: lightgreen;
+	margin-bottom: @margin;
+}
+
+.mainRightDown {
+	flex: 1;
+	//background: limegreen;
+	display: flex;
+}
+
+.mainRightDownRight {
+	flex: 1;
+	background: lime;
+	margin-right: @margin/2;
+}
+
+.mainRightDownLeft {
+	flex: 1;
+	background: lawngreen;
+	margin-left: @margin/2;
+}
+
+.block {
+	padding: 10px 20px 10px 20px;
+	display: flex;
+	flex-direction: column; 
+}
+
+@titleMargin: 30px;
+.title {
+	text-align: center;
+	color: black;
+	border-bottom: solid 2px;
+	margin-bottom: 2px;
+}
+
+.content {
+	flex: 1;
+	background: grey;
+}
