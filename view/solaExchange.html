@@ -5,6 +5,7 @@
     <!--必須在less.js之前-->
     <link rel="stylesheet/less" type="text/css" href="css/solaExchange.less?{{.Uncache}}">
     <script type='text/javascript' src='js/less.min.js'></script>
+    <link rel="stylesheet" type="text/css" href="lib/fontawesome/css/font-awesome.css" />
     <!--script type="text/javascript" src="js/jquery.js"></script>
     <script type="text/javascript" src="js/sprintf.js"></script>
     <script type="text/javascript" src="js/web3.min.js"></script>
@@ -26,13 +27,18 @@
     <title>Sola Exchange</title>
     <page>
         <header>
-            <label>SOLA</label>
-            <select id="sntwTokenType">
-                <option value="1">SNTW1</option>
-                <option value="2">SNTW2</option>
-                <option value="3">SNTW3</option>
-            </select>
-            <label id="userAccount">0xAeD134</label>
+            <div class="headerLeft">
+                <img class="logo" src="img/logo.png">
+                <select id="sntwTokenSelection">
+                    <option value="1">SNTW1</option>
+                    <option value="2">SNTW2</option>
+                    <option value="3">SNTW3</option>
+                </select>
+            </div>
+            <div class="headerRight">
+                <i class="fa fa-user-o userIcon" aria-hidden="true"></i>
+                <label id="userAccount">0xAeD134</label>
+            </div>
         </header>
         <main>
             <div class="mainLeft">
