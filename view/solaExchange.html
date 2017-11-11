@@ -113,8 +113,8 @@
                             <span class="inputUnit">STTW</span>
                         </div>
                         <div class="orderButton">
-                            <div class="btnBuy">Buy</div>
-                            <div class="btnSell">Sell</div>
+                            <div class="buy">Buy</div>
+                            <div class="sell">Sell</div>
                         </div>
                     </div>
                 </div>
@@ -130,13 +130,75 @@
                     <div class="mainRightDownRight block">
                         <label class="title">OPEN ORDERS</label>
                         <div class="content">
-                            TODO
+                            <div class="table">
+                                <div class="rowHead">
+                                    <div class="cell">Order</div>
+                                    <div class="cell">Pair</div>
+                                    <div class="cell">Price</div>
+                                    <div class="cell">Units Filled</div>
+                                    <div class="cell">Units Total</div>
+                                    <div class="cell">Status</div>
+                                </div>
+                                <div class="row buy">
+                                    <div class="cell">BUY</div>
+                                    <div class="cell">SNTW</div>
+                                    <div class="cell">9.2</div>
+                                    <div class="cell">0</div>
+                                    <div class="cell">100</div>
+                                    <div class="cell">alive</div>
+                                </div>
+                                <div class="row sell">
+                                    <div class="cell">BUY</div>
+                                    <div class="cell">SNTW</div>
+                                    <div class="cell">9.5</div>
+                                    <div class="cell">20</div>
+                                    <div class="cell">50</div>
+                                    <div class="cell">alive</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div class="mainRightDownLeft block">
                         <label class="title">ORDER BOOK</label>
-                        <div class="content">
-                            TODO
+                        <div id="orderBook" class="content">
+                            <div class="orderBookBuy">
+                                <div class="table">
+                                    <div class="rowHead">
+                                        <div class="cell">Amount</div>
+                                        <div class="cell">Total</div>
+                                        <div class="cell">Price</div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="cell">--</div>
+                                        <div class="cell">--</div>
+                                        <div class="cell">9.2</div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="cell">--</div>
+                                        <div class="cell">--</div>
+                                        <div class="cell">9.1</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="orderBookSell">
+                                <div class="table">
+                                    <div class="rowHead">
+                                        <div class="cell">Price</div>
+                                        <div class="cell">Total</div>
+                                        <div class="cell">Amount</div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="cell">9.3</div>
+                                        <div class="cell">--</div>
+                                        <div class="cell">--</div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="cell">9.5</div>
+                                        <div class="cell">--</div>
+                                        <div class="cell">--</div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

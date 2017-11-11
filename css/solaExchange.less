@@ -115,7 +115,8 @@ footer {
     margin: 0.5em;
 }
 
-.input, .balance {
+.input,
+.balance {
     border: 1px solid #384952;
     background-color: #303e46;
     display: flex;
@@ -143,19 +144,67 @@ input[type=number] {
     display: flex;
 }
 
-.orderButton > div {
+.orderButton>div {
     flex: 1;
     text-align: center;
     padding: 0.5em;
     margin: 0.2em;
 }
 
-.btnBuy {
+.buy {
     color: #dadfd3;
     background: #587331;
 }
 
-.btnSell {
+.sell {
     color: #dfc4c5;
     background: #7b1a1f;
+}
+
+.table {
+    display: table;
+    width: 100%;
+    text-align: right;
+    border-collapse: collapse;
+}
+
+.rowHead {
+    display: table-row;
+    font-weight: bold;
+}
+
+.row {
+    display: table-row;
+    border-top: solid #1b262d 0.3em;
+}
+
+.cell {
+    display: table-cell;
+}
+
+#orderBook {
+    display: flex;
+}
+
+.orderBookBuy,
+.orderBookSell {
+    flex: 1;
+    font-weight: bold;
+}
+
+.orderBookBuy .cell,
+.orderBookSell .cell {
+    width: 33%;
+}
+
+.orderBookBuy {
+    text-align: left;
+}
+
+.orderBookBuy .row {
+    color: #587331;
+}
+
+.orderBookSell .row {
+    color: #7b1a1f;
 }
