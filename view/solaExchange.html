@@ -6,12 +6,14 @@
     <link rel="stylesheet/less" type="text/css" href="css/solaExchange.less?{{.Uncache}}">
     <script type='text/javascript' src='js/less.min.js'></script>
     <link rel="stylesheet" type="text/css" href="lib/fontawesome/css/font-awesome.css" />
+    <script type="text/javascript" src="js/highstock.js"></script>
+    <script type="text/javascript" src="js/highchartsTheme.js?{{.Uncache}}"></script>
+    <script type="text/javascript" src="js/jquery.js"></script>
     <!--script type="text/javascript" src="js/jquery.js"></script>
     <script type="text/javascript" src="js/sprintf.js"></script>
     <script type="text/javascript" src="js/web3.min.js"></script>
     <script type="text/javascript" src="js/ethers.js?{{.Uncache}}"></script>
     <script type="text/javascript" src="js/Chart.min.js"></script>
-    <script type="text/javascript" src="js/highstock.js"></script>
     <script type="text/javascript" src="http://maps.google.com/maps/api/js?key=AIzaSyCQ3UTayHzAcoPXJUM3Ag_-FBxII1o6fNg"></script>
     <script type="text/javascript" src="js/gmaps.js?{{.Uncache}}"></script>
     <script type="text/javascript" src="data/sttwABI.js?{{.Uncache}}"></script>
@@ -20,6 +22,27 @@
     <script type="text/javascript" src="data/solaExchangeABI.js?{{.Uncache}}"></script>
     <script type="text/javascript" src="data/map_style.json?{{.Uncache}}"></script-->
     <script type="text/javascript">
+    Highcharts.setOptions(Highcharts.theme);
+    $.getJSON('https://www.highcharts.com/samples/data/jsonp.php?a=e&filename=aapl-ohlc.json&callback=?', function(data) {
+
+        // create the chart
+        Highcharts.stockChart('container', {
+            rangeSelector: {
+                selected: 1
+            },
+            series: [{
+                type: 'candlestick',
+                name: 'SNTW Price',
+                data: data
+            }],
+            navigator: {
+                enabled: false
+            },
+            scrollbar: {
+                enabled: false
+            }
+        });
+    });
     </script>
 </head>
 
@@ -122,14 +145,14 @@
             <div class="mainRight">
                 <div class="mainRightUp block">
                     <label class="title">CHART</label>
-                    <div class="content">
-                        TODO
+                    <div class="content chart">
+                        <div id="container" style="width:100%"></div>
                     </div>
                 </div>
                 <div class="mainRightDown">
                     <div class="mainRightDownRight block">
                         <label class="title">OPEN ORDERS</label>
-                        <div class="content">
+                        <div class="content scrollbar">
                             <div class="table">
                                 <div class="rowHead">
                                     <div class="cell">Order</div>
@@ -148,7 +171,55 @@
                                     <div class="cell">alive</div>
                                 </div>
                                 <div class="row sell">
-                                    <div class="cell">BUY</div>
+                                    <div class="cell">SELL</div>
+                                    <div class="cell">SNTW</div>
+                                    <div class="cell">9.5</div>
+                                    <div class="cell">20</div>
+                                    <div class="cell">50</div>
+                                    <div class="cell">alive</div>
+                                </div>
+                                <div class="row sell">
+                                    <div class="cell">SELL</div>
+                                    <div class="cell">SNTW</div>
+                                    <div class="cell">9.5</div>
+                                    <div class="cell">20</div>
+                                    <div class="cell">50</div>
+                                    <div class="cell">alive</div>
+                                </div>
+                                <div class="row sell">
+                                    <div class="cell">SELL</div>
+                                    <div class="cell">SNTW</div>
+                                    <div class="cell">9.5</div>
+                                    <div class="cell">20</div>
+                                    <div class="cell">50</div>
+                                    <div class="cell">alive</div>
+                                </div>
+                                <div class="row sell">
+                                    <div class="cell">SELL</div>
+                                    <div class="cell">SNTW</div>
+                                    <div class="cell">9.5</div>
+                                    <div class="cell">20</div>
+                                    <div class="cell">50</div>
+                                    <div class="cell">alive</div>
+                                </div>
+                                <div class="row sell">
+                                    <div class="cell">SELL</div>
+                                    <div class="cell">SNTW</div>
+                                    <div class="cell">9.5</div>
+                                    <div class="cell">20</div>
+                                    <div class="cell">50</div>
+                                    <div class="cell">alive</div>
+                                </div>
+                                <div class="row sell">
+                                    <div class="cell">SELL</div>
+                                    <div class="cell">SNTW</div>
+                                    <div class="cell">9.5</div>
+                                    <div class="cell">20</div>
+                                    <div class="cell">50</div>
+                                    <div class="cell">alive</div>
+                                </div>
+                                <div class="row sell">
+                                    <div class="cell">SELL</div>
                                     <div class="cell">SNTW</div>
                                     <div class="cell">9.5</div>
                                     <div class="cell">20</div>
@@ -169,14 +240,39 @@
                                         <div class="cell">Price</div>
                                     </div>
                                     <div class="row">
-                                        <div class="cell">--</div>
-                                        <div class="cell">--</div>
+                                        <div class="cell">1</div>
+                                        <div class="cell">100</div>
                                         <div class="cell">9.2</div>
                                     </div>
                                     <div class="row">
-                                        <div class="cell">--</div>
-                                        <div class="cell">--</div>
+                                        <div class="cell">2</div>
+                                        <div class="cell">200</div>
                                         <div class="cell">9.1</div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="cell">3</div>
+                                        <div class="cell">300</div>
+                                        <div class="cell">9.0</div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="cell">4</div>
+                                        <div class="cell">400</div>
+                                        <div class="cell">8.9</div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="cell">5</div>
+                                        <div class="cell">500</div>
+                                        <div class="cell">8.8</div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="cell">6</div>
+                                        <div class="cell">600</div>
+                                        <div class="cell">8.7</div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="cell">7</div>
+                                        <div class="cell">700</div>
+                                        <div class="cell">8.6</div>
                                     </div>
                                 </div>
                             </div>
@@ -189,13 +285,38 @@
                                     </div>
                                     <div class="row">
                                         <div class="cell">9.3</div>
-                                        <div class="cell">--</div>
-                                        <div class="cell">--</div>
+                                        <div class="cell">10</div>
+                                        <div class="cell">1</div>
                                     </div>
                                     <div class="row">
                                         <div class="cell">9.5</div>
-                                        <div class="cell">--</div>
-                                        <div class="cell">--</div>
+                                        <div class="cell">20</div>
+                                        <div class="cell">2</div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="cell">9.6</div>
+                                        <div class="cell">30</div>
+                                        <div class="cell">3</div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="cell">9.7</div>
+                                        <div class="cell">40</div>
+                                        <div class="cell">4</div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="cell">9.8</div>
+                                        <div class="cell">50</div>
+                                        <div class="cell">5</div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="cell">9.9</div>
+                                        <div class="cell">60</div>
+                                        <div class="cell">6</div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="cell">10.0</div>
+                                        <div class="cell">70</div>
+                                        <div class="cell">7</div>
                                     </div>
                                 </div>
                             </div>
