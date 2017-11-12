@@ -67,5 +67,14 @@ var mapStyle = [
         "visibility": "off"
       }
     ]
+  },
+  {
+    "featureType": "water",
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#1b262d"
+      }
+    ]
   }
 ]

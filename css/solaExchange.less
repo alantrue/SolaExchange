@@ -1,5 +1,6 @@
 @headerHeight: 2em;
-@body1Height: 27em;
+@mainHeight: 55em;
+@footerHeight: 2em;
 @margin: 0.5em;
 
 * {
@@ -8,10 +9,7 @@
     font-family: "Open Sans", sans-serif;
 }
 
-page {
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
+body {
     background: #2c3940;
 }
 
@@ -24,13 +22,15 @@ header {
 }
 
 main {
-    height: @body1Height;
+    height: @mainHeight;
     display: flex;
     margin: @margin;
 }
 
 footer {
-    flex: 1;
+    height: @footerHeight;
+    color: #A4A9AC;
+    text-align: center;
 }
 
 .mainLeft {
@@ -40,37 +40,68 @@ footer {
     margin-right: @margin;
 }
 
+.mainLeft1 {
+    height: 9em;
+    margin-bottom: @margin;
+}
+
+.mainLeft2 {
+    height: 15em;
+    margin-bottom: @margin;
+}
+
+.mainLeft3 {
+    flex: 1;
+}
+
 .mainRight {
     flex: 1;
     display: flex;
     flex-direction: column;
 }
 
-.mainLeftUp {
-    height: 9em;
+.mainRight1 {
+    height: 25em;
     margin-bottom: @margin;
-}
-
-.mainLeftDown {
-    flex: 1;
-}
-
-.mainRightUp {
-    flex: 1;
-    margin-bottom: @margin;
-}
-
-.mainRightDown {
-    flex: 1;
     display: flex;
 }
 
-.mainRightDownRight {
+.mainRight2 {
+    height: 13em;
+    display: flex;
+    margin-bottom: @margin;
+}
+
+.mainRight3 {
+    flex: 1;
+}
+
+.mainRight1Left {
+    flex: 1;
+    margin-right: @margin/2;
+    display: flex;
+    flex-direction: column;
+}
+.mainRight1Right {
+    width: 15em;
+    margin-left: @margin/2;
+}
+
+.mainRight1Left1 {
+    height: 7em;
+    margin-bottom: @margin;
+}
+
+.mainRight1Left2 {
+    flex: 1;
+}
+
+.mainRight2Right {
     flex: 1;
     margin-right: @margin/2;
 }
 
-.mainRightDownLeft {
+.mainRight2Left {
     flex: 1;
     margin-left: @margin/2;
 }
@@ -116,7 +147,8 @@ footer {
 }
 
 .input,
-.balance {
+.balance,
+.pair {
     border: 1px solid #384952;
     background-color: #303e46;
     display: flex;
@@ -231,4 +263,20 @@ input[type=number] {
 
 .chart {
     display: flex;
+}
+
+.map {
+    flex:1;
+    width: 100%;
+    height: 100%;
+}
+
+.zone {
+    flex:1;
+    width: 100%;
+    height: 95%;
+}
+
+.gm-style-cc {
+    display:none;
 }
