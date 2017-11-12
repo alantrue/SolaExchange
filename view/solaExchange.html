@@ -38,8 +38,6 @@
         <div class="headerRight">
             <i class="fa fa-clock-o icon" aria-hidden="true"></i>
             <label id="currentBlock"></label>
-            <i class="fa fa-money icon" aria-hidden="true"></i>
-            <label id="walletETH"></label>
             <i class="fa fa-user-o icon" aria-hidden="true"></i>
             <label id="userAccount"></label>
         </div>
@@ -47,43 +45,80 @@
     <main>
         <div class="mainLeft">
             <div class="mainLeft1 block">
-                <label class="title">BALANCES</label>
+                <label class="title">Wallet</label>
                 <div class="content">
-                    <div class="balance">
-                        <span id="balanceTitle">STTW</span>
+                    <div class="wallet">
+                        <span>ETH</span>
+                        <span id="walletETH">0</span>
+                    </div>
+                    <div class="wallet">
+                        <span>STTW</span>
                         <span>
-                            <span id="balanceSTTW"></span>
-                            <i id="withdrawSTTW" title="Withdraw" class="fa fa-minus-circle clickable" aria-hidden="true"></i>
-                            <i id="depositSTTW" title="Deposit" class="fa fa-plus-circle clickable" aria-hidden="true"></i>
+                            <span id="walletSTTW">0</span>
+                            <i id="approveSTTW" title="Approve" class="fa fa-handshake-o clickable" aria-hidden="true"></i>
                         </span>
                     </div>
-                    <div class="balance">
-                        <span id="balanceTitle">SNTW1</span>
+                    <div class="wallet">
+                        <span>SNTW1</span>
                         <span>
-                            <span id="balanceSNTW1"></span>
-                            <i id="withdrawSNTW1" title="Withdraw" class="fa fa-minus-circle clickable" aria-hidden="true"></i>
-                            <i id="depositSNTW1" title="Deposit" class="fa fa-plus-circle clickable" aria-hidden="true"></i>
+                            <span id="walletSNTW1">0</span>
+                            <i id="approveSNTW1" title="Approve" class="fa fa-handshake-o clickable" aria-hidden="true"></i>
                         </span>
                     </div>
-                    <div class="balance">
-                        <span id="balanceTitle">SNTW2</span>
+                    <div class="wallet">
+                        <span>SNTW2</span>
                         <span>
-                            <span id="balanceValue">0</span>
-                            <i id="withdrawSNTW2" title="Withdraw" class="fa fa-minus-circle clickable" aria-hidden="true"></i>
-                            <i id="depositSNTW2" title="Deposit" class="fa fa-plus-circle clickable" aria-hidden="true"></i>
+                            <span id="walletSNTW2">0</span>
+                            <i id="approveSNTW2" title="Approve" class="fa fa-handshake-o clickable" aria-hidden="true"></i>
                         </span>
                     </div>
-                    <div class="balance">
-                        <span id="balanceTitle">SNTW3</span>
+                    <div class="wallet">
+                        <span>SNTW3</span>
                         <span>
-                            <span id="balanceValue">0</span>
-                            <i id="withdrawSNTW3" title="Withdraw" class="fa fa-minus-circle clickable" aria-hidden="true"></i>
-                            <i id="depositSNTW3" title="Deposit" class="fa fa-plus-circle clickable" aria-hidden="true"></i>
+                            <span id="walletSNTW3">0</span>
+                            <i id="approveSNTW3" title="Approve" class="fa fa-handshake-o clickable" aria-hidden="true"></i>
                         </span>
                     </div>
                 </div>
             </div>
             <div class="mainLeft2 block">
+                <label class="title">BALANCES</label>
+                <div class="content">
+                    <div class="balance">
+                        <span>STTW</span>
+                        <span>
+                            <span id="balanceSTTW">0</span>
+                            <i id="withdrawSTTW" title="Withdraw" class="fa fa-minus-circle clickable" aria-hidden="true"></i>
+                            <i id="depositSTTW" title="Deposit (after Approved)" class="fa fa-plus-circle clickable" aria-hidden="true"></i>
+                        </span>
+                    </div>
+                    <div class="balance">
+                        <span>SNTW1</span>
+                        <span>
+                            <span id="balanceSNTW1">0</span>
+                            <i id="withdrawSNTW1" title="Withdraw" class="fa fa-minus-circle clickable" aria-hidden="true"></i>
+                            <i id="depositSNTW1" title="Deposit (after Approved)" class="fa fa-plus-circle clickable" aria-hidden="true"></i>
+                        </span>
+                    </div>
+                    <div class="balance">
+                        <span>SNTW2</span>
+                        <span>
+                            <span id="balanceSNTW2">0</span>
+                            <i id="withdrawSNTW2" title="Withdraw" class="fa fa-minus-circle clickable" aria-hidden="true"></i>
+                            <i id="depositSNTW2" title="Deposit (after Approved)" class="fa fa-plus-circle clickable" aria-hidden="true"></i>
+                        </span>
+                    </div>
+                    <div class="balance">
+                        <span>SNTW3</span>
+                        <span>
+                            <span id="balanceSNTW3">0</span>
+                            <i id="withdrawSNTW3" title="Withdraw" class="fa fa-minus-circle clickable" aria-hidden="true"></i>
+                            <i id="depositSNTW3" title="Deposit (after Approved)" class="fa fa-plus-circle clickable" aria-hidden="true"></i>
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <div class="mainLeft3 block">
                 <label class="title">NEW ORDER</label>
                 <div class="content">
                     <div class="input">
@@ -122,7 +157,7 @@
                     </div>
                 </div>
             </div>
-            <div class="mainLeft3 block">
+            <div class="mainLeft4 block">
                 <label class="title">MY TRADE HISTORY</label>
                 <div class="content scrollbar">
                     <div id="myTrades" class="table">

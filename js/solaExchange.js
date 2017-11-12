@@ -18,6 +18,10 @@ var eventList = {};
 var orderBook = {};
 var myOrders = {};
 
+var sttw = new web3.eth.Contract(sttwABI, sttwAddress);
+var sntw1 = new web3.eth.Contract(sntwABI, sntwAddress1);
+var sntw2 = new web3.eth.Contract(sntwABI, sntwAddress2);
+var sntw3 = new web3.eth.Contract(sntwABI, sntwAddress3);
 var solaExchange = new web3.eth.Contract(solaExchangeABI, solaExchangeAddress);
 
 $(function() {
@@ -47,26 +51,25 @@ $(function() {
             });
 
             web3.eth.getBalance(account).then(function(r) {
-                $("#walletETH").text(sprintf("ETH: %s", web3.utils.fromWei(r, 'ether')));
+                $("#walletETH").text(web3.utils.fromWei(r, 'ether'));
             });
 
-            /*
             sttw.methods.balanceOf(account).call().then(function(r) {
-                $("#sttwInWallet").text(sprintf("STTW: %s", web3.utils.fromWei(r, 'ether')));
+                $("#walletSTTW").text(web3.utils.fromWei(r, 'ether'));
             });
 
             sntw1.methods.balanceOf(account).call().then(function(r) {
-                $("#sntwInWallet1").text(sprintf("SNTW1: %s", web3.utils.fromWei(r, 'ether')));
+                $("#walletSNTW1").text(web3.utils.fromWei(r, 'ether'));
             });
 
             sntw2.methods.balanceOf(account).call().then(function(r) {
-                $("#sntwInWallet2").text(sprintf("SNTW2: %s", web3.utils.fromWei(r, 'ether')));
+                $("#walletSNTW2").text(web3.utils.fromWei(r, 'ether'));
             });
 
             sntw3.methods.balanceOf(account).call().then(function(r) {
-                $("#sntwInWallet3").text(sprintf("SNTW3: %s", web3.utils.fromWei(r, 'ether')));
+                $("#walletSNTW3").text(web3.utils.fromWei(r, 'ether'));
             });
-            */
+
             solaExchange.methods.balanceOf(sttwAddress, account).call().then(function(r) {
                 $("#balanceSTTW").text(web3.utils.fromWei(r, 'ether'));
             });
@@ -381,20 +384,20 @@ function toLocalTimestamp(timestamp) {
 }
 
 function bindAll() {
-    $("#withdrawSTTW").click(function() {
-        console.log("withdrawSTTW");
+    $("#approveSTTW").click(function() {
+        console.log("approveSTTW");
     });
 
-    $("#withdrawSNTW1").click(function() {
-        console.log("withdrawSNTW1");
+    $("#approveSNTW1").click(function() {
+        console.log("approveSNTW1");
     });
 
-    $("#withdrawSNTW2").click(function() {
-        console.log("withdrawSNTW2");
+    $("#approveSNTW2").click(function() {
+        console.log("approveSNTW2");
     });
 
-    $("#withdrawSNTW3").click(function() {
-        console.log("withdrawSNTW3");
+    $("#approveSNTW3").click(function() {
+        console.log("approveSNTW3");
     });
 
     $("#depositSTTW").click(function() {
@@ -411,6 +414,22 @@ function bindAll() {
 
     $("#depositSNTW3").click(function() {
         console.log("depositSNTW3");
+    });
+
+    $("#withdrawSTTW").click(function() {
+        console.log("withdrawSTTW");
+    });
+
+    $("#withdrawSNTW1").click(function() {
+        console.log("withdrawSNTW1");
+    });
+
+    $("#withdrawSNTW2").click(function() {
+        console.log("withdrawSNTW2");
+    });
+
+    $("#withdrawSNTW3").click(function() {
+        console.log("withdrawSNTW3");
     });
 
     $("#pairs").on("click", ".row", function() {
