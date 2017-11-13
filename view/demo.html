@@ -658,6 +658,33 @@
                 .then(console.log);
         });
 
+        $("#btnAllowanceToken").click(function() {
+            var token = $("#token").val();
+            var tokenAddress;
+            switch (token) {
+                case "0":
+                    tokenAddress = sttwAddress;
+                    tokenContract = sttw;
+                    break;
+                case "1":
+                    tokenAddress = sntwAddress1;
+                    tokenContract = sntw1;
+                    break;
+                case "2":
+                    tokenAddress = sntwAddress2;
+                    tokenContract= sntw2;
+                    break;
+                case "3":
+                    tokenAddress = sntwAddress3;
+                    tokenContract = sntw3;
+                    break;
+            }
+            
+            tokenContract.methods.allowance(account, solaExchangeAddress).call().then(function(r) {
+                        alert(sprintf("you can deposit %s (%s)", web3.utils.fromWei(r, 'ether') , getTokenName(tokenAddress)));
+                    });
+        });
+
         $("#btnWithdrawToken").click(function() {
             var token = $("#token").val();
             var tokenAddress;
@@ -1398,6 +1425,8 @@
                 <button type="button" id="btnApprove">Approve</button>
                 <button type="button" id="btnDepositToken">Deposit</button>
                 <button type="button" id="btnWithdrawToken">Withdraw</button>
+                <button type="button" id="btnAllowanceToken">Allowance</button>
+                
                 <hr/>
                 <!--select id="generateToken">
                 <option value="1">SNTW1</option>

@@ -729,7 +729,12 @@ function bindAll() {
         var operation = $(this).text();
         switch (operation) {
             case "Approve":
-                tokenContract.methods.approve(solaExchangeAddress, web3.utils.toWei(v, 'ether')).send({ from: account }).then(console.log);
+                tokenContract.methods.approve(solaExchangeAddress, web3.utils.toWei(v, 'ether')).send({ from: account }).then(function(result) {
+                    tokenContract.methods.allowance(account, solaExchangeAddress).call().then(function(r) {
+                        alert(sprintf("you can deposit %s (%s)", web3.utils.fromWei(r, 'ether') , getTokenName(tokenAddress)));
+                    });
+                    console.log(result);
+                });
                 break;
             case "Deposit":
                 solaExchange.methods.depositToken(tokenAddress, web3.utils.toWei(v, 'ether')).send({ from: account }).then(console.log);
