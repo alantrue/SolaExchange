@@ -53,43 +53,51 @@ $(function() {
             });
 
             web3.eth.getBalance(account).then(function(r) {
-                $("#walletETH").text(web3.utils.fromWei(r, 'ether'));
+                $("#walletETH").text(formatWeiValue(r));
             });
 
             sttw.methods.balanceOf(account).call().then(function(r) {
-                $("#walletSTTW").text(web3.utils.fromWei(r, 'ether'));
+                $("#walletSTTW").text(formatWeiValue(r));
             });
 
             sntw1.methods.balanceOf(account).call().then(function(r) {
-                $("#walletSNTW1").text(web3.utils.fromWei(r, 'ether'));
+                $("#walletSNTW1").text(formatWeiValue(r));
             });
 
             sntw2.methods.balanceOf(account).call().then(function(r) {
-                $("#walletSNTW2").text(web3.utils.fromWei(r, 'ether'));
+                $("#walletSNTW2").text(formatWeiValue(r));
             });
 
             sntw3.methods.balanceOf(account).call().then(function(r) {
-                $("#walletSNTW3").text(web3.utils.fromWei(r, 'ether'));
+                $("#walletSNTW3").text(formatWeiValue(r));
             });
 
             solaExchange.methods.balanceOf(sttwAddress, account).call().then(function(r) {
-                $("#balanceSTTW").text(web3.utils.fromWei(r, 'ether'));
+                $("#balanceSTTW").text(formatWeiValue(r));
             });
 
             solaExchange.methods.balanceOf(sntwAddress1, account).call().then(function(r) {
-                $("#balanceSNTW1").text(web3.utils.fromWei(r, 'ether'));
+                $("#balanceSNTW1").text(formatWeiValue(r));
             });
 
             solaExchange.methods.balanceOf(sntwAddress2, account).call().then(function(r) {
-                $("#balanceSNTW2").text(web3.utils.fromWei(r, 'ether'));
+                $("#balanceSNTW2").text(formatWeiValue(r));
             });
 
             solaExchange.methods.balanceOf(sntwAddress3, account).call().then(function(r) {
-                $("#balanceSNTW3").text(web3.utils.fromWei(r, 'ether'));
+                $("#balanceSNTW3").text(formatWeiValue(r));
             });
         }
     }, 1000);
 });
+
+function formatWeiValue(r) {
+    return formatValue(parseFloat(web3.utils.fromWei(r, 'ether')));
+}
+
+function formatValue(r) {
+    return Math.floor(r*1000000)/1000000;    
+}
 
 function getTokenName(address) {
     switch (address) {
@@ -199,7 +207,7 @@ function refreshTrade() {
                         rate = sttw / sntw;
                     }
 
-                    $("#myTrades .rowHead:last").after(sprintf("<div class='row %s'><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div></div>", order.toLowerCase(), order, getTokenName(sntwAddress), rate, sntw));
+                    $("#myTrades .rowHead:last").after(sprintf("<div class='row %s'><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div></div>", order.toLowerCase(), order, getTokenName(sntwAddress), formatValue(rate), sntw));
                 }
             }
         });
@@ -268,14 +276,14 @@ function refreshOrder(selectedSntw) {
                                 $("#orderBookBuy .row").remove();
                                 for (var s in sortBuys) {
                                     var o = sortBuys[s][0];
-                                    var order = $(sprintf("<div id='o_%s' title='click to trade.' data-logid='%s' class='row clickable selectable'><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div></div>", o.nonce, o.logId, o.rate, o.sntw, o.remained));
+                                    var order = $(sprintf("<div id='o_%s' title='click to trade.' data-logid='%s' class='row clickable selectable'><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div></div>", o.nonce, o.logId, formatValue(o.rate), o.sntw, o.remained));
                                     $("#orderBookBuy").append(order);
                                 }
 
                                 $("#orderBookSell .row").remove();
                                 for (var s in sortSells) {
                                     var o = sortSells[s][0];
-                                    var order = $(sprintf("<div id='o_%s' title='click to trade.' data-logid='%s' class='row clickable selectable'><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div></div>", o.nonce, o.logId, o.rate, o.sntw, o.remained));
+                                    var order = $(sprintf("<div id='o_%s' title='click to trade.' data-logid='%s' class='row clickable selectable'><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div></div>", o.nonce, o.logId, formatValue(o.rate), o.sntw, o.remained));
                                     $("#orderBookSell").append(order);
                                 }
                             }
@@ -284,7 +292,7 @@ function refreshOrder(selectedSntw) {
                                 $("#myOrders .row").remove();
                                 for (var id in myOrders.orders) {
                                     var o = myOrders.orders[id];
-                                    var order = $(sprintf("<div id='mo_%s' title='click to cancel.' data-logid='%s' class='row clickable selectable %s'><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div></div>", o.nonce, o.logId, o.order.toLowerCase(), o.order, getTokenName(o.sntwAddress), o.rate, o.sntw, o.remained, o.expires))
+                                    var order = $(sprintf("<div id='mo_%s' title='click to cancel.' data-logid='%s' class='row clickable selectable %s'><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div></div>", o.nonce, o.logId, o.order.toLowerCase(), o.order, getTokenName(o.sntwAddress), formatValue(o.rate), o.sntw, o.remained, o.expires))
                                     $("#myOrders").append(order);
                                 }
                             }
