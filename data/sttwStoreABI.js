@@ -1,4 +1,4 @@
-var sttwStoreAddress = "0x40Cfd044aeD99298C8Dc0dDf20cc6f6f5E794D5f";
+var sttwStoreAddress = "0xe566dd550b19a3508A81c8Db58ceb1d8080fAeE2";
 var sttwStoreABI = [{
         "constant": true,
         "inputs": [],

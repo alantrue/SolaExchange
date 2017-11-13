@@ -100,7 +100,7 @@ function formatValue(v, precision) {
         precision = 6;
     }
     var precision = Math.pow(10, precision);
-    return Math.floor(v*precision)/precision;    
+    return Math.floor(v * precision) / precision;
 }
 
 function getTokenName(address) {
@@ -158,7 +158,7 @@ function refreshPairs() {
         console.log(allPackage);
         var testType = 0;
         allPackage.forEach(function(item, index) {
-            var pair = $(sprintf("<div data-id='%s' title='click to select %s' class='row pair clickable selectable'><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div></div>", item.id, "SNTW" + (++testType), "SNTW" + testType, item.date.slice(0, 10), item.capacity.toFixed(2)+"(kW)", (item.decay*100).toFixed(2)+"%", "100%"));
+            var pair = $(sprintf("<div data-id='%s' title='click to select %s' class='row pair clickable selectable'><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div></div>", item.id, "SNTW" + (++testType), "SNTW" + testType, item.date.slice(0, 10), formatValue(item.capacity, 2) + "(kW)", formatValue(item.decay * 100, 2) + "%", "100%"));
             $("#pairs").append(pair);
         });
 
@@ -519,6 +519,16 @@ function calcOrder() {
     $("#orderTotal").text(sttw + sttw * feeRate);
 }
 
+function showMessage(msg) {
+    var lastMsg = $("#messageContent").html();
+    if (lastMsg) {
+        $("#messageContent").html(lastMsg + "<br/>" + msg);
+    } else {
+        $("#messageContent").html(msg);
+    }
+    $("#messageMask").show();
+}
+
 function bindAll() {
     $("#approveSTTW").click(function() {
         openBalanceDialog(sttwAddress, "Approve");
@@ -615,7 +625,7 @@ function bindAll() {
                 lng: project.coord.lng,
                 title: project.name,
                 infoWindow: {
-                    content: sprintf('<h8>%s</h8><div>裝置容量: %s(kW)</div><div>發電年衰減率: %s</div>', project.name, project.capacity, (project.decay*100).toFixed(2)+"%"),
+                    content: sprintf('<h8>%s</h8><div>裝置容量: %s(kW)</div><div>發電年衰減率: %s</div>', project.name, project.capacity, formatValue(project.decay * 100, 2) + "%"),
                     maxWidth: 300
                 }
             });
@@ -696,6 +706,7 @@ function bindAll() {
                 .then(function(r) {
                     console.log(r);
                     refreshOrder(sntwAddress);
+                    showMessage("Cancel the order successfully.");
                 });
         }
     });
@@ -743,16 +754,22 @@ function bindAll() {
             case "Approve":
                 tokenContract.methods.approve(solaExchangeAddress, web3.utils.toWei(v, 'ether')).send({ from: account }).then(function(result) {
                     tokenContract.methods.allowance(account, solaExchangeAddress).call().then(function(r) {
-                        alert(sprintf("you can deposit %s (%s)", web3.utils.fromWei(r, 'ether') , getTokenName(tokenAddress)));
+                        showMessage(sprintf("Approve successfully. You can deposit %s %s.", web3.utils.fromWei(r, 'ether'), getTokenName(tokenAddress)));
                     });
                     console.log(result);
                 });
                 break;
             case "Deposit":
-                solaExchange.methods.depositToken(tokenAddress, web3.utils.toWei(v, 'ether')).send({ from: account }).then(console.log);
+                solaExchange.methods.depositToken(tokenAddress, web3.utils.toWei(v, 'ether')).send({ from: account }).then(function(result) {
+                    showMessage("Deposit successful.");
+                    console.log(result);
+                });
                 break;
             case "Withdraw":
-                solaExchange.methods.withdrawToken(tokenAddress, web3.utils.toWei(v, 'ether')).send({ from: account }).then(console.log);
+                solaExchange.methods.withdrawToken(tokenAddress, web3.utils.toWei(v, 'ether')).send({ from: account }).then(function(result) {
+                    showMessage("Withdraw successful.");
+                    console.log(result);
+                });
                 break;
         }
 
@@ -784,6 +801,7 @@ function bindAll() {
                 refreshOrder(sntwAddress);
                 refreshTrade();
                 refreshPriceChart(sntwAddress, startBlock);
+                showMessage("The transaction is successful.");
             });
 
         $("#tradeMask").hide();
@@ -826,6 +844,7 @@ function bindAll() {
             .then(function(r) {
                 console.log(r);
                 refreshOrder(sntwAddress);
+                showMessage("Create a buy order successfully.");
             });
     });
 
@@ -852,6 +871,16 @@ function bindAll() {
             .then(function(r) {
                 console.log(r);
                 refreshOrder(sntwAddress);
+                showMessage("Create a sell order successfully.");
             });
     });
+
+    $("#messageConfirm").click(function() {
+        $('#messageContent').html('');
+        $('#messageMask').hide();
+    });
+
+    $(".cancelBtn").click(function() {
+        $(this).parent().parent().hide();
+    })
 }

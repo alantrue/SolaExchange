@@ -23,7 +23,7 @@
     <!--icon-->
     <link rel="stylesheet" type="text/css" href="lib/fontawesome/css/font-awesome.css" />
     <!--my code-->
-    <script type="text/javascript" src="js/solaExchange.js"></script>
+    <script type="text/javascript" src="js/solaExchange.js?{{.Uncache}}"></script>
     <!--必須在less.js之前-->
     <link rel="stylesheet/less" type="text/css" href="css/solaExchange.less?{{.Uncache}}">
     <script type='text/javascript' src='js/less.min.js'></script>
@@ -55,28 +55,28 @@
                         <span>STTW</span>
                         <span>
                             <span id="walletSTTW">0</span>
-                            <i id="approveSTTW" title="Approve" class="fa fa-handshake-o clickable" aria-hidden="true"></i>
+                        <i id="approveSTTW" title="Approve" class="fa fa-handshake-o clickable" aria-hidden="true"></i>
                         </span>
                     </div>
                     <div class="wallet">
                         <span>SNTW1</span>
                         <span>
                             <span id="walletSNTW1">0</span>
-                            <i id="approveSNTW1" title="Approve" class="fa fa-handshake-o clickable" aria-hidden="true"></i>
+                        <i id="approveSNTW1" title="Approve" class="fa fa-handshake-o clickable" aria-hidden="true"></i>
                         </span>
                     </div>
                     <div class="wallet">
                         <span>SNTW2</span>
                         <span>
                             <span id="walletSNTW2">0</span>
-                            <i id="approveSNTW2" title="Approve" class="fa fa-handshake-o clickable" aria-hidden="true"></i>
+                        <i id="approveSNTW2" title="Approve" class="fa fa-handshake-o clickable" aria-hidden="true"></i>
                         </span>
                     </div>
                     <div class="wallet">
                         <span>SNTW3</span>
                         <span>
                             <span id="walletSNTW3">0</span>
-                            <i id="approveSNTW3" title="Approve" class="fa fa-handshake-o clickable" aria-hidden="true"></i>
+                        <i id="approveSNTW3" title="Approve" class="fa fa-handshake-o clickable" aria-hidden="true"></i>
                         </span>
                     </div>
                 </div>
@@ -88,32 +88,32 @@
                         <span>STTW</span>
                         <span>
                             <span id="balanceSTTW">0</span>
-                            <i id="withdrawSTTW" title="Withdraw" class="fa fa-minus-circle clickable" aria-hidden="true"></i>
-                            <i id="depositSTTW" title="Deposit (after Approved)" class="fa fa-plus-circle clickable" aria-hidden="true"></i>
+                        <i id="withdrawSTTW" title="Withdraw" class="fa fa-minus-circle clickable" aria-hidden="true"></i>
+                        <i id="depositSTTW" title="Deposit (after Approved)" class="fa fa-plus-circle clickable" aria-hidden="true"></i>
                         </span>
                     </div>
                     <div class="balance">
                         <span>SNTW1</span>
                         <span>
                             <span id="balanceSNTW1">0</span>
-                            <i id="withdrawSNTW1" title="Withdraw" class="fa fa-minus-circle clickable" aria-hidden="true"></i>
-                            <i id="depositSNTW1" title="Deposit (after Approved)" class="fa fa-plus-circle clickable" aria-hidden="true"></i>
+                        <i id="withdrawSNTW1" title="Withdraw" class="fa fa-minus-circle clickable" aria-hidden="true"></i>
+                        <i id="depositSNTW1" title="Deposit (after Approved)" class="fa fa-plus-circle clickable" aria-hidden="true"></i>
                         </span>
                     </div>
                     <div class="balance">
                         <span>SNTW2</span>
                         <span>
                             <span id="balanceSNTW2">0</span>
-                            <i id="withdrawSNTW2" title="Withdraw" class="fa fa-minus-circle clickable" aria-hidden="true"></i>
-                            <i id="depositSNTW2" title="Deposit (after Approved)" class="fa fa-plus-circle clickable" aria-hidden="true"></i>
+                        <i id="withdrawSNTW2" title="Withdraw" class="fa fa-minus-circle clickable" aria-hidden="true"></i>
+                        <i id="depositSNTW2" title="Deposit (after Approved)" class="fa fa-plus-circle clickable" aria-hidden="true"></i>
                         </span>
                     </div>
                     <div class="balance">
                         <span>SNTW3</span>
                         <span>
                             <span id="balanceSNTW3">0</span>
-                            <i id="withdrawSNTW3" title="Withdraw" class="fa fa-minus-circle clickable" aria-hidden="true"></i>
-                            <i id="depositSNTW3" title="Deposit (after Approved)" class="fa fa-plus-circle clickable" aria-hidden="true"></i>
+                        <i id="withdrawSNTW3" title="Withdraw" class="fa fa-minus-circle clickable" aria-hidden="true"></i>
+                        <i id="depositSNTW3" title="Deposit (after Approved)" class="fa fa-plus-circle clickable" aria-hidden="true"></i>
                         </span>
                     </div>
                 </div>
@@ -254,10 +254,10 @@
             <label>Copy Right & Other Information</label>
         </div>
     </footer>
-    <div id="tradeMask" hidden="true">
-        <div id="tradeDialog">
+    <div id="tradeMask" class="dialogMask">
+        <div id="tradeDialog" class="dialog">
             <label id="tradeDialogTradeType"></label>
-            <hr/>
+            <hr class="dialogHr" />
             <div id="tradeDialogDescription"></div>
             <br/>
             <div id="tradeDialogAmountLabel"></div>
@@ -272,20 +272,27 @@
             <input id="tradeDialogFee" type="number" disabled></input>
             <br/>
             <br/>
-            <hr/>
-            <button id="tradeCancel" type="button" onclick="$('#tradeMask').hide();">cancel</button>
-            <button id="tradeConfirm" type="button">trade</button>
+            <hr class="dialogHr" />
+            <button class="dialogBtn cancelBtn" type="button">cancel</button>
+            <button id="tradeConfirm" class="dialogBtn" type="button">trade</button>
         </div>
     </div>
-    <div id="balanceMask" hidden="true">
-        <div id="balanceDialog">
+    <div id="balanceMask" class="dialogMask">
+        <div class="dialog">
             <div id="balanceDialogAmountLabel"></div>
             <input id="balanceDialogAmount" type="number"></input>
             <br/>
             <br/>
-            <hr/>
-            <button id="balanceCancel" type="button" onclick="$('#balanceMask').hide();">cancel</button>
-            <button id="balanceConfirm" type="button"></button>
+            <hr class="dialogHr" />
+            <button class="dialogBtn cancelBtn" type="button">cancel</button>
+            <button id="balanceConfirm" class="dialogBtn" type="button"></button>
+        </div>
+    </div>
+    <div id="messageMask" class="dialogMask">
+        <div class="dialog">
+            <div id="messageContent"></div>
+            <hr class="dialogHr" />
+            <button id="messageConfirm" class="dialogBtn" type="button">ok</button>
         </div>
     </div>
 </body>

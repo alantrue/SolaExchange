@@ -1,4 +1,4 @@
-var solaExchangeAddress = '0xe566dd550b19a3508A81c8Db58ceb1d8080fAeE2';
+var solaExchangeAddress = '0x2B682AE79Ee25B030F9Aa397D7c7160eC5BE2246';
 var solaExchangeABI = [{
         "constant": false,
         "inputs": [{
