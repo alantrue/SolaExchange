@@ -114,7 +114,7 @@ function refreshPairs() {
         allProject = data;
         var testType = 0;
         allProject.forEach(function(item, index) {
-            var pair = $(sprintf("<div data-id='%s' title='click to select %s' class='row pair clickable selectable'><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div></div>", item.id, "SNTW" + (++testType), "SNTW" + testType, item.name, item.date.slice(0, 10), item.capacity, item.decay, "TODO"));
+            var pair = $(sprintf("<div data-id='%s' title='click to select %s' class='row pair clickable selectable'><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div></div>", item.id, "SNTW" + (++testType), "SNTW" + testType, item.name, item.date.slice(0, 10), item.capacity, item.decay, "100%"));
             if (index < 3) {
                 $("#pairs").append(pair);
             }
@@ -214,11 +214,12 @@ function refreshOrder(selectedSntw) {
                 }
 
                 var expires = (rv.expires > currentBlock) ? rv.expires - currentBlock : 0;
-
-                if (expires > 0) {
-                    orderBook.count += 1;
-                    orderBook.orders[e.id] = { logId: e.id, order: order, sntw: sntw, sntwAddress: sntwAddress, sttw: sttw, rate: rate, nonce: rv.nonce, expires: expires };
+                if (expires == 0) {
+                    continue;
                 }
+
+                orderBook.count += 1;
+                orderBook.orders[e.id] = { logId: e.id, order: order, sntw: sntw, sntwAddress: sntwAddress, sttw: sttw, rate: rate, nonce: rv.nonce, expires: expires };
 
                 if (rv.user == account) {
                     myOrders.count += 1;
@@ -242,14 +243,14 @@ function refreshOrder(selectedSntw) {
                                 $("#orderBookBuy .row").remove();
                                 for (var s in sortBuys) {
                                     var o = sortBuys[s][0];
-                                    var order = $(sprintf("<div id='o_%s' title='click to trade.' data-logid='%s' class='row clickable selectable'><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div></div>", o.nonce, o.logId, o.rate, o.remained, "TODO"));
+                                    var order = $(sprintf("<div id='o_%s' title='click to trade.' data-logid='%s' class='row clickable selectable'><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div></div>", o.nonce, o.logId, o.rate, o.sntw, o.remained));
                                     $("#orderBookBuy").append(order);
                                 }
 
                                 $("#orderBookSell .row").remove();
                                 for (var s in sortSells) {
                                     var o = sortSells[s][0];
-                                    var order = $(sprintf("<div id='o_%s' title='click to trade.' data-logid='%s' class='row clickable selectable'><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div></div>", o.nonce, o.logId, o.rate, o.remained, "TODO"));
+                                    var order = $(sprintf("<div id='o_%s' title='click to trade.' data-logid='%s' class='row clickable selectable'><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div></div>", o.nonce, o.logId, o.rate, o.sntw, o.remained));
                                     $("#orderBookSell").append(order);
                                 }
                             }
@@ -258,7 +259,7 @@ function refreshOrder(selectedSntw) {
                                 $("#myOrders .row").remove();
                                 for (var id in myOrders.orders) {
                                     var o = myOrders.orders[id];
-                                    var order = $(sprintf("<div id='mo_%s' title='click to cancel.' data-logid='%s' class='row clickable selectable %s'><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div></div>", o.nonce, o.logId, o.order.toLowerCase(), o.order, getTokenName(o.sntwAddress), o.rate, o.remained, o.sntw, (o.expires > 0 ? 'alive' : 'expired')))
+                                    var order = $(sprintf("<div id='mo_%s' title='click to cancel.' data-logid='%s' class='row clickable selectable %s'><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div></div>", o.nonce, o.logId, o.order.toLowerCase(), o.order, getTokenName(o.sntwAddress), o.rate, o.sntw, o.remained, o.expires))
                                     $("#myOrders").append(order);
                                 }
                             }
@@ -303,8 +304,9 @@ function refreshExpires() {
             var rv = e.returnValues;
             var expires = (rv.expires > currentBlock) ? rv.expires - currentBlock : 0;
 
+            $(this).find('.cell:last-child').text(expires);
             if (expires == 0) {
-                $(this).find('.cell:last-child').text("expired");
+                $(this).hide();
             }
         }
     });
