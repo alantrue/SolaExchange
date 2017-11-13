@@ -91,12 +91,16 @@ $(function() {
     }, 1000);
 });
 
-function formatWeiValue(r) {
-    return formatValue(parseFloat(web3.utils.fromWei(r, 'ether')));
+function formatWeiValue(v, precision) {
+    return formatValue(parseFloat(web3.utils.fromWei(v, 'ether')), precision);
 }
 
-function formatValue(r) {
-    return Math.floor(r*1000000)/1000000;    
+function formatValue(v, precision) {
+    if (!precision) {
+        precision = 6;
+    }
+    var precision = Math.pow(10, precision);
+    return Math.floor(v*precision)/precision;    
 }
 
 function getTokenName(address) {
@@ -207,7 +211,7 @@ function refreshTrade() {
                         rate = sttw / sntw;
                     }
 
-                    $("#myTrades .rowHead:last").after(sprintf("<div class='row %s'><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div></div>", order.toLowerCase(), order, getTokenName(sntwAddress), formatValue(rate), sntw));
+                    $("#myTrades .rowHead:last").after(sprintf("<div class='row %s'><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div></div>", order.toLowerCase(), order, getTokenName(sntwAddress), formatValue(rate, 3), sntw));
                 }
             }
         });
@@ -276,14 +280,14 @@ function refreshOrder(selectedSntw) {
                                 $("#orderBookBuy .row").remove();
                                 for (var s in sortBuys) {
                                     var o = sortBuys[s][0];
-                                    var order = $(sprintf("<div id='o_%s' title='click to trade.' data-logid='%s' class='row clickable selectable'><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div></div>", o.nonce, o.logId, formatValue(o.rate), o.sntw, o.remained));
+                                    var order = $(sprintf("<div id='o_%s' title='click to trade.' data-logid='%s' class='row clickable selectable'><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div></div>", o.nonce, o.logId, formatValue(o.rate, 3), o.sntw, o.remained));
                                     $("#orderBookBuy").append(order);
                                 }
 
                                 $("#orderBookSell .row").remove();
                                 for (var s in sortSells) {
                                     var o = sortSells[s][0];
-                                    var order = $(sprintf("<div id='o_%s' title='click to trade.' data-logid='%s' class='row clickable selectable'><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div></div>", o.nonce, o.logId, formatValue(o.rate), o.sntw, o.remained));
+                                    var order = $(sprintf("<div id='o_%s' title='click to trade.' data-logid='%s' class='row clickable selectable'><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div></div>", o.nonce, o.logId, formatValue(o.rate, 3), o.sntw, o.remained));
                                     $("#orderBookSell").append(order);
                                 }
                             }
@@ -292,7 +296,7 @@ function refreshOrder(selectedSntw) {
                                 $("#myOrders .row").remove();
                                 for (var id in myOrders.orders) {
                                     var o = myOrders.orders[id];
-                                    var order = $(sprintf("<div id='mo_%s' title='click to cancel.' data-logid='%s' class='row clickable selectable %s'><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div></div>", o.nonce, o.logId, o.order.toLowerCase(), o.order, getTokenName(o.sntwAddress), formatValue(o.rate), o.sntw, o.remained, o.expires))
+                                    var order = $(sprintf("<div id='mo_%s' title='click to cancel.' data-logid='%s' class='row clickable selectable %s'><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div></div>", o.nonce, o.logId, o.order.toLowerCase(), o.order, getTokenName(o.sntwAddress), formatValue(o.rate, 3), o.sntw, o.remained, o.expires))
                                     $("#myOrders").append(order);
                                 }
                             }
