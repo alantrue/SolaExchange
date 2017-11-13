@@ -57,12 +57,12 @@ contract SolaExchange is Ownable {
   mapping (address => mapping (bytes32 => bool)) public orders; //mapping of user accounts to mapping of order hashes to booleans (true = submitted by user, equivalent to offchain signature)
   mapping (address => mapping (bytes32 => uint)) public orderFills; //mapping of user accounts to mapping of order hashes to uints (amount of order that has been filled)
 
-  event Order(address tokenGet, uint amountGet, address tokenGive, uint amountGive, uint expires, uint nonce, address user);
-  event Cancel(address tokenGet, uint amountGet, address tokenGive, uint amountGive, uint expires, uint nonce, address user, uint8 v, bytes32 r, bytes32 s);
-  event Trade(address tokenGet, uint amountGet, address tokenGive, uint amountGive, address get, address give);
-  event Deposit(address token, address user, uint amount, uint balance);
-  event Withdraw(address token, address user, uint amount, uint balance);
-  event Transfer(address token, uint amount, address user, address receiver, uint balance);
+  event Order(address indexed tokenGet, uint amountGet, address indexed tokenGive, uint amountGive, uint expires, uint nonce, address indexed user);
+  event Cancel(address indexed tokenGet, uint amountGet, address indexed tokenGive, uint amountGive, uint expires, uint nonce, address indexed user, uint8 v, bytes32 r, bytes32 s);
+  event Trade(address indexed tokenGet, uint amountGet, address indexed tokenGive, uint amountGive, address get, address give);
+  event Deposit(address indexed token, address indexed user, uint amount, uint balance);
+  event Withdraw(address indexed token, address indexed user, uint amount, uint balance);
+  event Transfer(address indexed token, uint amount, address indexed user, address indexed receiver, uint balance);
 
   modifier nonZeroAddress(address x) {
     require(x != 0x0);
@@ -163,35 +163,60 @@ contract SolaExchange is Ownable {
     needTokenAllowed(tokenGive)
   {
     require(expires > block.number);
-    require(tokens[tokenGive][msg.sender] >= amountGive.add(amountGive.mul(feeTake)/1000));
+    if (tokenGive == address(basicToken)) {
+      require(tokens[tokenGive][msg.sender] >= amountGive.add(amountGive.mul(feeTake)/1000));
+    }
     bytes32 hash = sha256(this, tokenGet, amountGet, tokenGive, amountGive, expires, nonce);
     orders[msg.sender][hash] = true;
     Order(tokenGet, amountGet, tokenGive, amountGive, expires, nonce, msg.sender);
   }
 
   function trade(address tokenGet, uint amountGet, address tokenGive, uint amountGive, uint expires, uint nonce, address user, uint8 v, bytes32 r, bytes32 s, uint amount) {
+    require(amount > 0);
     //amount is in amountGet terms
     bytes32 hash = sha256(this, tokenGet, amountGet, tokenGive, amountGive, expires, nonce);
+    // if (!(
+    //   (orders[user][hash] || ecrecover(sha3("\x19Ethereum Signed Message:\n32", hash),v,r,s) == user) &&
+    //   block.number <= expires &&
+    //   (orderFills[user][hash].add(amount)) <= amountGet
+    // )) revert();
+    // require(tokens[tokenGet][msg.sender] >= amount.add(amount.mul(feeTake)/1000));
+
     if (!(
       (orders[user][hash] || ecrecover(sha3("\x19Ethereum Signed Message:\n32", hash),v,r,s) == user) &&
-      block.number <= expires &&
-      (orderFills[user][hash].add(amount)) <= amountGet
+      block.number <= expires
     )) revert();
-    require(tokens[tokenGet][msg.sender] >= amount.add(amount.mul(feeTake)/1000));
+
+    // check real amount to trade
+    uint remain = amountGet.sub(orderFills[user][hash]);
+    if (amount > remain) {
+      amount = remain;
+    }
+
     tradeBalances(tokenGet, amountGet, tokenGive, amountGive, user, amount);
     orderFills[user][hash] = orderFills[user][hash].add(amount);
     Trade(tokenGet, amount, tokenGive, amountGive * amount / amountGet, user, msg.sender);
   }
 
   function tradeBalances(address tokenGet, uint amountGet, address tokenGive, uint amountGive, address user, uint amount) private {
-    uint feeTakeGet = amount.mul(feeTake) / 1000;
-    uint feeTakeGive = (amountGive.mul(amount) / amountGet).mul(feeTake) / 1000;
-    tokens[tokenGet][msg.sender] = tokens[tokenGet][msg.sender].sub(amount.add(feeTakeGet));
-    tokens[tokenGet][user] = tokens[tokenGet][user].add(amount);
-    tokens[tokenGet][feeAccount] = tokens[tokenGet][feeAccount].add(feeTakeGet);
-    tokens[tokenGive][user] = tokens[tokenGive][user].sub((amountGive.mul(amount) / amountGet).add(feeTakeGive));
-    tokens[tokenGive][msg.sender] = tokens[tokenGive][msg.sender].add((amountGive.mul(amount)) / amountGet);
-    tokens[tokenGive][feeAccount] = tokens[tokenGive][feeAccount].add(feeTakeGive);
+    if (tokenGet == address(basicToken)) {
+      uint feeTakeGet = amount.mul(feeTake) / 1000;
+      tokens[tokenGet][msg.sender] = tokens[tokenGet][msg.sender].sub(amount.add(feeTakeGet));
+      tokens[tokenGet][user] = tokens[tokenGet][user].add(amount.sub(feeTakeGet));
+      tokens[tokenGet][feeAccount] = tokens[tokenGet][feeAccount].add(feeTakeGet.sub(2));
+      tokens[tokenGive][user] = tokens[tokenGive][user].sub((amountGive.mul(amount) / amountGet));
+      tokens[tokenGive][msg.sender] = tokens[tokenGive][msg.sender].add((amountGive.mul(amount)) / amountGet);
+    } else if (tokenGive == address(basicToken)) {
+      uint feeTakeGive = (amountGive.mul(amount) / amountGet).mul(feeTake) / 1000;
+      tokens[tokenGet][msg.sender] = tokens[tokenGet][msg.sender].sub(amount);
+      tokens[tokenGet][user] = tokens[tokenGet][user].add(amount);
+      tokens[tokenGive][user] = tokens[tokenGive][user].sub((amountGive.mul(amount) / amountGet).add(feeTakeGive));
+      tokens[tokenGive][msg.sender] = tokens[tokenGive][msg.sender].add((amountGive.mul(amount)) / amountGet).sub(feeTakeGive);
+      tokens[tokenGive][feeAccount] = tokens[tokenGive][feeAccount].add(feeTakeGive.mul(2));
+    } else {
+      // not support any token to exchange
+      revert();
+    }
   }
 
   function testTrade(address tokenGet, uint amountGet, address tokenGive, uint amountGive, uint expires, uint nonce, address user, uint8 v, bytes32 r, bytes32 s, uint amount, address sender) constant returns(bool) {

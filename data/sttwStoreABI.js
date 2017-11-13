@@ -1,4 +1,4 @@
-var sttwStoreAddress = "0x4c02AdA41679B8382bcc9C06BbFa727CF464E909";
+var sttwStoreAddress = "0x40Cfd044aeD99298C8Dc0dDf20cc6f6f5E794D5f";
 var sttwStoreABI = [{
         "constant": true,
         "inputs": [],
@@ -12,8 +12,41 @@ var sttwStoreABI = [{
     },
     {
         "constant": false,
+        "inputs": [{
+            "name": "usdTwd",
+            "type": "address"
+        }],
+        "name": "updateUsdTwdPriceAddress",
+        "outputs": [],
+        "payable": false,
+        "type": "function"
+    },
+    {
+        "constant": false,
         "inputs": [],
         "name": "kill",
+        "outputs": [],
+        "payable": false,
+        "type": "function"
+    },
+    {
+        "constant": true,
+        "inputs": [],
+        "name": "usd_twd",
+        "outputs": [{
+            "name": "",
+            "type": "address"
+        }],
+        "payable": false,
+        "type": "function"
+    },
+    {
+        "constant": false,
+        "inputs": [{
+            "name": "ethUsd",
+            "type": "address"
+        }],
+        "name": "updateEthUsdPriceAddress",
         "outputs": [],
         "payable": false,
         "type": "function"
@@ -41,6 +74,20 @@ var sttwStoreABI = [{
         "type": "function"
     },
     {
+        "constant": true,
+        "inputs": [{
+            "name": "decimal",
+            "type": "uint256"
+        }],
+        "name": "getEthUsdPrice",
+        "outputs": [{
+            "name": "",
+            "type": "uint256"
+        }],
+        "payable": false,
+        "type": "function"
+    },
+    {
         "constant": false,
         "inputs": [{
                 "name": "owner",
@@ -59,6 +106,20 @@ var sttwStoreABI = [{
     {
         "constant": true,
         "inputs": [{
+            "name": "weiAmount",
+            "type": "uint256"
+        }],
+        "name": "calculateBuyTokenUsingEth",
+        "outputs": [{
+            "name": "",
+            "type": "uint256"
+        }],
+        "payable": false,
+        "type": "function"
+    },
+    {
+        "constant": true,
+        "inputs": [{
             "name": "owner",
             "type": "address"
         }],
@@ -71,6 +132,17 @@ var sttwStoreABI = [{
         "type": "function"
     },
     {
+        "constant": false,
+        "inputs": [{
+            "name": "amount",
+            "type": "uint256"
+        }],
+        "name": "sellTokenForEth",
+        "outputs": [],
+        "payable": false,
+        "type": "function"
+    },
+    {
         "constant": true,
         "inputs": [],
         "name": "owner",
@@ -78,6 +150,75 @@ var sttwStoreABI = [{
             "name": "",
             "type": "address"
         }],
+        "payable": false,
+        "type": "function"
+    },
+    {
+        "constant": false,
+        "inputs": [],
+        "name": "buyTokenUsingEth",
+        "outputs": [],
+        "payable": true,
+        "type": "function"
+    },
+    {
+        "constant": true,
+        "inputs": [{
+            "name": "decimal",
+            "type": "uint256"
+        }],
+        "name": "getUsdTwdPrice",
+        "outputs": [{
+            "name": "",
+            "type": "uint256"
+        }],
+        "payable": false,
+        "type": "function"
+    },
+    {
+        "constant": true,
+        "inputs": [{
+            "name": "tokenAmount",
+            "type": "uint256"
+        }],
+        "name": "calculateSellTokenForEth",
+        "outputs": [{
+            "name": "",
+            "type": "uint256"
+        }],
+        "payable": false,
+        "type": "function"
+    },
+    {
+        "constant": true,
+        "inputs": [],
+        "name": "usd_twd_decimal",
+        "outputs": [{
+            "name": "",
+            "type": "uint256"
+        }],
+        "payable": false,
+        "type": "function"
+    },
+    {
+        "constant": true,
+        "inputs": [],
+        "name": "eth_usd",
+        "outputs": [{
+            "name": "",
+            "type": "address"
+        }],
+        "payable": false,
+        "type": "function"
+    },
+    {
+        "constant": false,
+        "inputs": [{
+            "name": "decimal",
+            "type": "uint256"
+        }],
+        "name": "updateEthUsdDecimal",
+        "outputs": [],
         "payable": false,
         "type": "function"
     },
@@ -104,6 +245,28 @@ var sttwStoreABI = [{
             }
         ],
         "name": "sellToken",
+        "outputs": [],
+        "payable": false,
+        "type": "function"
+    },
+    {
+        "constant": true,
+        "inputs": [],
+        "name": "eth_usd_decimal",
+        "outputs": [{
+            "name": "",
+            "type": "uint256"
+        }],
+        "payable": false,
+        "type": "function"
+    },
+    {
+        "constant": false,
+        "inputs": [{
+            "name": "decimal",
+            "type": "uint256"
+        }],
+        "name": "updateUsdTwdDecimal",
         "outputs": [],
         "payable": false,
         "type": "function"
@@ -141,6 +304,14 @@ var sttwStoreABI = [{
             },
             {
                 "name": "_retailer",
+                "type": "address"
+            },
+            {
+                "name": "_ethUsd",
+                "type": "address"
+            },
+            {
+                "name": "_usdTwd",
                 "type": "address"
             }
         ],

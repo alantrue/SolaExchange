@@ -1,4 +1,4 @@
-var solaExchangeAddress = '0x020af400faD8471D57Abf85AbfAcd35ee979c785';
+var solaExchangeAddress = '0xe566dd550b19a3508A81c8Db58ceb1d8080fAeE2';
 var solaExchangeABI = [{
         "constant": false,
         "inputs": [{
@@ -610,7 +610,7 @@ var solaExchangeABI = [{
     {
         "anonymous": false,
         "inputs": [{
-                "indexed": false,
+                "indexed": true,
                 "name": "tokenGet",
                 "type": "address"
             },
@@ -620,7 +620,7 @@ var solaExchangeABI = [{
                 "type": "uint256"
             },
             {
-                "indexed": false,
+                "indexed": true,
                 "name": "tokenGive",
                 "type": "address"
             },
@@ -640,7 +640,7 @@ var solaExchangeABI = [{
                 "type": "uint256"
             },
             {
-                "indexed": false,
+                "indexed": true,
                 "name": "user",
                 "type": "address"
             }
@@ -651,7 +651,7 @@ var solaExchangeABI = [{
     {
         "anonymous": false,
         "inputs": [{
-                "indexed": false,
+                "indexed": true,
                 "name": "tokenGet",
                 "type": "address"
             },
@@ -661,7 +661,7 @@ var solaExchangeABI = [{
                 "type": "uint256"
             },
             {
-                "indexed": false,
+                "indexed": true,
                 "name": "tokenGive",
                 "type": "address"
             },
@@ -681,7 +681,7 @@ var solaExchangeABI = [{
                 "type": "uint256"
             },
             {
-                "indexed": false,
+                "indexed": true,
                 "name": "user",
                 "type": "address"
             },
@@ -707,7 +707,7 @@ var solaExchangeABI = [{
     {
         "anonymous": false,
         "inputs": [{
-                "indexed": false,
+                "indexed": true,
                 "name": "tokenGet",
                 "type": "address"
             },
@@ -717,7 +717,7 @@ var solaExchangeABI = [{
                 "type": "uint256"
             },
             {
-                "indexed": false,
+                "indexed": true,
                 "name": "tokenGive",
                 "type": "address"
             },
@@ -743,12 +743,12 @@ var solaExchangeABI = [{
     {
         "anonymous": false,
         "inputs": [{
-                "indexed": false,
+                "indexed": true,
                 "name": "token",
                 "type": "address"
             },
             {
-                "indexed": false,
+                "indexed": true,
                 "name": "user",
                 "type": "address"
             },
@@ -769,12 +769,12 @@ var solaExchangeABI = [{
     {
         "anonymous": false,
         "inputs": [{
-                "indexed": false,
+                "indexed": true,
                 "name": "token",
                 "type": "address"
             },
             {
-                "indexed": false,
+                "indexed": true,
                 "name": "user",
                 "type": "address"
             },
@@ -795,7 +795,7 @@ var solaExchangeABI = [{
     {
         "anonymous": false,
         "inputs": [{
-                "indexed": false,
+                "indexed": true,
                 "name": "token",
                 "type": "address"
             },
@@ -805,12 +805,12 @@ var solaExchangeABI = [{
                 "type": "uint256"
             },
             {
-                "indexed": false,
+                "indexed": true,
                 "name": "user",
                 "type": "address"
             },
             {
-                "indexed": false,
+                "indexed": true,
                 "name": "receiver",
                 "type": "address"
             },
