@@ -104,25 +104,26 @@ $(function() {
             });
             p.values = {};
         });
-    });
 
-    $.getJSON("https://sola-api.herokuapp.com/api/v1/values", function(json) {
-        console.log(json);
-        json.forEach(function(item, index) {
-            var p = allProject.find(function(a) {
-                return a.id == item.id;
+        $.getJSON("https://sola-api.herokuapp.com/api/v1/values", function(json) {
+            console.log(json);
+            json.forEach(function(item, index) {
+                var p = allProject.find(function(a) {
+                    return a.id == item.id;
+                });
+
+                var dt = item.dt.slice(0, 10);
+                var v = p.values[dt];
+                if (v) {
+                    v += item.value;
+                    p.values[dt] = v;
+                } else {
+                    p.values[dt] = item.value;
+                }
             });
-
-            var dt = item.dt.slice(0, 10);
-            var v = p.values[dt];
-            if (v) {
-                v += item.value;
-                p.values[dt] = v;
-            } else {
-                p.values[dt] = item.value;
-            }
+            console.log(allProject);
+            $("#pairs .row").first().trigger("click");
         });
-        console.log(allProject);
     });
 });
 
@@ -427,6 +428,13 @@ function openTradeDialog(logId) {
     $("#tradeMask").show();
 }
 
+function calcOrder() {
+    var sttw = $("#orderPrice").val() * $("#orderAmount").val();
+    $("#orderSubtotal").text(sttw);
+    $("#orderFee").text(sttw * feeRate);
+    $("#orderTotal").text(sttw + sttw * feeRate);
+}
+
 function bindAll() {
     $("#approveSTTW").click(function() {
         openBalanceDialog(sttwAddress, "Approve");
@@ -490,6 +498,9 @@ function bindAll() {
                 sntwAddress = sntwAddress3;
                 break;
         }
+
+        $("#orderToken").text(pair);
+
         refreshOrder(sntwAddress);
         refreshPriceChart(sntwAddress, startBlock);
 
@@ -689,5 +700,65 @@ function bindAll() {
         var sttw = $("#tradeDialog").data("rate") * $("#tradeDialogAmount").val();
         $("#tradeDialogSTTW").val(sttw);
         $("#tradeDialogFee").val(sttw * feeRate);
+    });
+
+    $("#orderAmount").bind('keyup mouseup', function() {
+        calcOrder();
+    });
+
+    $("#orderPrice").bind('keyup mouseup', function() {
+        calcOrder();
+    });
+
+    $("#orderBuy").click(function() {
+        var token = $("#orderToken").text();
+        var sntwAddress;
+        switch (token) {
+            case "SNTW1":
+                sntwAddress = sntwAddress1;
+                break;
+            case "SNTW2":
+                sntwAddress = sntwAddress2;
+                break;
+            case "SNTW3":
+                sntwAddress = sntwAddress3;
+                break;
+        }
+
+        var get = $("#orderAmount").val();
+        var give = $("#orderSubtotal").text();
+        var expires = parseInt($('#orderExpires').val()) + currentBlock;
+        var nonce = Date.now();
+        solaExchange.methods.order(sntwAddress, web3.utils.toWei(get, 'ether'), sttwAddress, web3.utils.toWei(give, 'ether'), expires, nonce).send({ from: account })
+            .then(function(r) {
+                console.log(r);
+                refreshOrder(sntwAddress);
+            });
+    });
+
+    $("#orderSell").click(function() {
+        var token = $("#orderToken").text();
+        var sntwAddress;
+        switch (token) {
+            case "SNTW1":
+                sntwAddress = sntwAddress1;
+                break;
+            case "SNTW2":
+                sntwAddress = sntwAddress2;
+                break;
+            case "SNTW3":
+                sntwAddress = sntwAddress3;
+                break;
+        }
+
+        var get = $("#orderSubtotal").text();
+        var give = $("#orderAmount").val();
+        var expires = parseInt($('#orderExpires').val()) + currentBlock;
+        var nonce = Date.now();
+        solaExchange.methods.order(sttwAddress, web3.utils.toWei(get, 'ether'), sntwAddress, web3.utils.toWei(give, 'ether'), expires, nonce).send({ from: account })
+            .then(function(r) {
+                console.log(r);
+                refreshOrder(sntwAddress);
+            });
     });
 }

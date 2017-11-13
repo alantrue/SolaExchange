@@ -123,37 +123,37 @@
                 <div id="newOrder" class="content">
                     <div class="input">
                         <span class="inputTitle">Amount</span>
-                        <input type="number" value=0></input>
-                        <span class="inputUnit">SNTW</span>
+                        <input id="orderAmount" type="number" value=0></input>
+                        <span id="orderToken" class="inputUnit"></span>
                     </div>
                     <div class="input">
                         <span class="inputTitle">Price</span>
-                        <input type="number" value=0></input>
+                        <input id="orderPrice" type="number" value=0></input>
                         <span class="inputUnit">STTW</span>
                     </div>
                     <div class="input">
                         <span class="inputTitle">Expires</span>
-                        <input type="number" value=0></input>
+                        <input id="orderExpires" type="number" value=1000></input>
                         <span class="inputUnit">Blocks</span>
                     </div>
                     <div class="input">
                         <span class="inputTitle">Sub-total</span>
-                        <input type="number" value=0></input>
+                        <label id="orderSubtotal">0</label>
                         <span class="inputUnit">STTW</span>
                     </div>
                     <div class="input">
-                        <span class="inputTitle">Commission</span>
-                        <input type="number" value=0></input>
+                        <span class="inputTitle">Fee</span>
+                        <label id="orderFee">0</label>
                         <span class="inputUnit">STTW</span>
                     </div>
                     <div class="input">
                         <span class="inputTitle">Total</span>
-                        <input type="number" value=0></input>
+                        <label id="orderTotal">0</label>
                         <span class="inputUnit">STTW</span>
                     </div>
                     <div class="orderButton">
-                        <div class="clickable buy">Buy</div>
-                        <div class="clickable sell">Sell</div>
+                        <div id="orderBuy" class="clickable buy">Buy</div>
+                        <div id="orderSell" class="clickable sell">Sell</div>
                     </div>
                 </div>
             </div>
