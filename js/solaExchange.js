@@ -15,7 +15,7 @@ var feeRate = 0.005;
 var account;
 var dataInitialized = false;
 var currentBlock;
-var allProject, myBar;
+var allPackage, myBar;
 var eventList = {};
 var orderBook = {};
 var myOrders = {};
@@ -110,26 +110,51 @@ function getTokenName(address) {
 function refreshPairs() {
     $("#pairs .row").remove();
 
-    $.getJSON("https://sola-api.herokuapp.com/api/v1/projects", function(data) {
-        allProject = data;
+    $.getJSON("https://sola-api.herokuapp.com/api/v1/projects", function(allProject) {
+        allPackage = []
+        console.log(allProject);
         var testType = 0;
-        allProject.forEach(function(item, index) {
-            var pair = $(sprintf("<div data-id='%s' title='click to select %s' class='row pair clickable selectable'><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div></div>", item.id, "SNTW" + (++testType), "SNTW" + testType, item.name, item.date.slice(0, 10), item.capacity, item.decay, "100%"));
-            if (index < 3) {
-                $("#pairs").append(pair);
+
+        //包成package
+        allProject.forEach(function(project, index) {
+            var id = project.id.slice(0, 3);
+            var package = allPackage.find(function(a) { return a.id == id; });
+            if (!package) {
+                package = { id: id, date: "", capacity: 0, decay: 0, projects: [], values: [] };
+                allPackage.push(package);
             }
 
-            var p = allProject.find(function(a) {
-                return a.id == item.id;
+            package.projects.push(project);
+        });
+
+        //計算package的值
+        allPackage.forEach(function(package, index) {
+            var date = "",
+                totalCapacity = 0,
+                totalDecay = 0;
+            package.projects.forEach(function(project, index) {
+                date = project.date;
+                totalCapacity += project.capacity;
+                totalDecay += project.decay;
             });
-            p.values = {};
+
+            package.date = date;
+            package.capacity = totalCapacity;
+            package.decay = totalDecay / package.projects.length;
+        });
+
+        console.log(allPackage);
+        var testType = 0;
+        allPackage.forEach(function(item, index) {
+            var pair = $(sprintf("<div data-id='%s' title='click to select %s' class='row pair clickable selectable'><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div></div>", item.id, "SNTW" + (++testType), "SNTW" + testType, item.date.slice(0, 10), item.capacity.toFixed(2)+"(kW)", (item.decay*100).toFixed(2)+"%", "100%"));
+            $("#pairs").append(pair);
         });
 
         $.getJSON("https://sola-api.herokuapp.com/api/v1/values", function(json) {
             console.log(json);
             json.forEach(function(item, index) {
-                var p = allProject.find(function(a) {
-                    return a.id == item.id;
+                var p = allPackage.find(function(a) {
+                    return a.id == item.id.slice(0, 3);
                 });
 
                 var dt = item.dt.slice(0, 10);
@@ -141,7 +166,7 @@ function refreshPairs() {
                     p.values[dt] = item.value;
                 }
             });
-            console.log(allProject);
+            console.log(allPackage);
             $("#pairs .row").first().trigger("click");
         });
     });
@@ -554,14 +579,14 @@ function bindAll() {
         refreshPriceChart(sntwAddress, startBlock);
 
         var id = $(this).data("id");
-        var p = allProject.find(function(a) {
+        var p = allPackage.find(function(a) {
             return a.id == id;
         });
 
         var map = new GMaps({
             div: '#map',
-            lat: p.coord.lat,
-            lng: p.coord.lng,
+            lat: p.projects[0].coord.lat,
+            lng: p.projects[0].coord.lng,
             zoom: 7,
             mapTypeId: 'satellite',
             options: {
@@ -572,14 +597,16 @@ function bindAll() {
             }
         });
 
-        var m = map.addMarker({
-            lat: p.coord.lat,
-            lng: p.coord.lng,
-            title: p.name,
-            infoWindow: {
-                content: sprintf('<h8>%s</h8><div>裝置容量: %s(kW)</div>', p.name, p.capacity),
-                maxWidth: 100
-            }
+        p.projects.forEach(function(project, index) {
+            var m = map.addMarker({
+                lat: project.coord.lat,
+                lng: project.coord.lng,
+                title: project.name,
+                infoWindow: {
+                    content: sprintf('<h8>%s</h8><div>裝置容量: %s(kW)</div><div>發電年衰減率: %s</div>', project.name, project.capacity, (project.decay*100).toFixed(2)+"%"),
+                    maxWidth: 300
+                }
+            });
         });
 
         console.log(p.values);
