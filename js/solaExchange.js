@@ -45,10 +45,10 @@ $(function() {
                 $("#currentBlock").text(currentBlock);
                 if (!dataInitialized) {
                     dataInitialized = true;
+                    refreshPairs();
                     refreshTrade();
-                    //refreshTransfer();
                 } else {
-                    //refreshExpires();
+                    refreshExpires();
                 }
             });
 
@@ -89,7 +89,25 @@ $(function() {
             });
         }
     }, 1000);
+});
 
+function getTokenName(address) {
+    switch (address) {
+        case sttwAddress:
+            return "STTW";
+        case sntwAddress1:
+            return "SNTW1";
+        case sntwAddress2:
+            return "SNTW2";
+        case sntwAddress3:
+            return "SNTW3";
+        default:
+            alert("unknown token type");
+            return "unknown";
+    }
+}
+
+function refreshPairs() {
     $.getJSON("https://sola-api.herokuapp.com/api/v1/projects", function(data) {
         allProject = data;
         var testType = 0;
@@ -125,22 +143,6 @@ $(function() {
             $("#pairs .row").first().trigger("click");
         });
     });
-});
-
-function getTokenName(address) {
-    switch (address) {
-        case sttwAddress:
-            return "STTW";
-        case sntwAddress1:
-            return "SNTW1";
-        case sntwAddress2:
-            return "SNTW2";
-        case sntwAddress3:
-            return "SNTW3";
-        default:
-            alert("unknown token type");
-            return "unknown";
-    }
 }
 
 function refreshTrade() {
@@ -230,6 +232,7 @@ function refreshOrder(selectedSntw) {
                             if (!(need1 || need2)) {
                                 delete eventList[event.id];
                             }
+
                             if (orderBook.count == 0) {
                                 var sortBuys = sortForOrderBook(orderBook.orders, "BUY");
                                 var sortSells = sortForOrderBook(orderBook.orders, "SELL");
@@ -237,7 +240,7 @@ function refreshOrder(selectedSntw) {
                                 $("#orderBookBuy .row").remove();
                                 for (var s in sortBuys) {
                                     var o = sortBuys[s][0];
-                                    var order = $(sprintf("<div id='o_%s' title='click to trade.' data-logid='%s' class='row clickable'><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div></div>", o.nonce, o.logId, "TODO", o.remained, o.rate));
+                                    var order = $(sprintf("<div id='o_%s' title='click to trade.' data-logid='%s' class='row clickable'><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div></div>", o.nonce, o.logId, o.rate, o.remained, "TODO"));
                                     $("#orderBookBuy").append(order);
                                 }
 
@@ -263,7 +266,47 @@ function refreshOrder(selectedSntw) {
         });
 }
 
+function refreshExpires() {
+    $("#orderBookBuy .row").each(function() {
+        var logId = $(this).data("logid");
+        if (logId) {
+            var e = eventList[logId];
+            var rv = e.returnValues;
+            var expires = (rv.expires > currentBlock) ? rv.expires - currentBlock : 0;
 
+            if (expires == 0) {
+                $(this).hide();
+            }
+        }
+    });
+
+    $("#orderBookSell .row").each(function() {
+        var logId = $(this).data("logid");
+        if (logId) {
+            var e = eventList[logId];
+            var rv = e.returnValues;
+            var expires = (rv.expires > currentBlock) ? rv.expires - currentBlock : 0;
+
+            if (expires == 0) {
+                $(this).hide();
+            }
+        }
+    });
+
+
+    $("#myOrders .row").each(function() {
+        var logId = $(this).data("logid");
+        if (logId) {
+            var e = eventList[logId];
+            var rv = e.returnValues;
+            var expires = (rv.expires > currentBlock) ? rv.expires - currentBlock : 0;
+
+            if (expires == 0) {
+                $(this).find('.cell:last-child').text("expired");
+            }
+        }
+    });
+}
 
 function updateOrderData(orderData, eventId, filled) {
     if (orderData.orders[eventId]) {
