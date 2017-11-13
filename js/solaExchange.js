@@ -112,7 +112,7 @@ function refreshPairs() {
         allProject = data;
         var testType = 0;
         allProject.forEach(function(item, index) {
-            var pair = $(sprintf("<div data-id='%s' title='click to select %s' class='row pair clickable'><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div></div>", item.id, "SNTW" + (++testType), "SNTW" + testType, item.name, item.date.slice(0, 10), item.capacity, item.decay, "TODO"));
+            var pair = $(sprintf("<div data-id='%s' title='click to select %s' class='row pair clickable selectable'><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div></div>", item.id, "SNTW" + (++testType), "SNTW" + testType, item.name, item.date.slice(0, 10), item.capacity, item.decay, "TODO"));
             if (index < 3) {
                 $("#pairs").append(pair);
             }
@@ -240,14 +240,14 @@ function refreshOrder(selectedSntw) {
                                 $("#orderBookBuy .row").remove();
                                 for (var s in sortBuys) {
                                     var o = sortBuys[s][0];
-                                    var order = $(sprintf("<div id='o_%s' title='click to trade.' data-logid='%s' class='row clickable'><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div></div>", o.nonce, o.logId, o.rate, o.remained, "TODO"));
+                                    var order = $(sprintf("<div id='o_%s' title='click to trade.' data-logid='%s' class='row clickable selectable'><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div></div>", o.nonce, o.logId, o.rate, o.remained, "TODO"));
                                     $("#orderBookBuy").append(order);
                                 }
 
                                 $("#orderBookSell .row").remove();
                                 for (var s in sortSells) {
                                     var o = sortSells[s][0];
-                                    var order = $(sprintf("<div id='o_%s' title='click to trade.' data-logid='%s' class='row clickable'><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div></div>", o.nonce, o.logId, o.rate, o.remained, "TODO"));
+                                    var order = $(sprintf("<div id='o_%s' title='click to trade.' data-logid='%s' class='row clickable selectable'><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div></div>", o.nonce, o.logId, o.rate, o.remained, "TODO"));
                                     $("#orderBookSell").append(order);
                                 }
                             }
@@ -256,7 +256,7 @@ function refreshOrder(selectedSntw) {
                                 $("#myOrders .row").remove();
                                 for (var id in myOrders.orders) {
                                     var o = myOrders.orders[id];
-                                    var order = $(sprintf("<div id='mo_%s' title='click to cancel.' data-logid='%s' class='row clickable %s'><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div></div>", o.nonce, o.logId, o.order.toLowerCase(), o.order, getTokenName(o.sntwAddress), o.rate, o.remained, o.sntw, (o.expires > 0 ? 'alive' : 'expired')))
+                                    var order = $(sprintf("<div id='mo_%s' title='click to cancel.' data-logid='%s' class='row clickable selectable %s'><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div></div>", o.nonce, o.logId, o.order.toLowerCase(), o.order, getTokenName(o.sntwAddress), o.rate, o.remained, o.sntw, (o.expires > 0 ? 'alive' : 'expired')))
                                     $("#myOrders").append(order);
                                 }
                             }
@@ -528,6 +528,8 @@ function bindAll() {
     });
 
     $("#pairs").on("click", ".row", function() {
+        $("#pairs .row").removeClass("selected");
+        $(this).addClass("selected");
         var pair = $(this).children().first().text();
         var sntwAddress;
         switch (pair) {

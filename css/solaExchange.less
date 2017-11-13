@@ -151,8 +151,7 @@ footer {
 
 .wallet,
 .balance,
-.input,
-.pair {
+.input {
     border: 1px solid #384952;
     background-color: #303e46;
     display: flex;
@@ -192,6 +191,10 @@ footer {
     text-align: center;
     padding: 0.5em;
     margin: 0.2em;
+}
+
+#orderBuy, #orderSell {
+    font-weight: bold;
 }
 
 .buy {
@@ -302,6 +305,22 @@ footer {
 
 .clickable {
     cursor: pointer;
+}
+
+.clickable:hover {
+    color: gold;
+}
+
+#pairs>.selectable:hover {
+    background: dimgrey;
+}
+
+#pairs>.clickable:hover {
+    color: #A4A9AC;
+}
+
+.selected {
+    color: gold;
 }
 
 #tradeMask,
