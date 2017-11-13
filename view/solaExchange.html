@@ -120,7 +120,7 @@
             </div>
             <div class="mainLeft3 block">
                 <label class="title">NEW ORDER</label>
-                <div class="content">
+                <div id="newOrder" class="content">
                     <div class="input">
                         <span class="inputTitle">Amount</span>
                         <input type="number" value=0></input>
@@ -255,6 +255,29 @@
             <label>Copy Right & Other Information</label>
         </div>
     </footer>
+    <div id="tradeMask" hidden="true">
+        <div id="tradeDialog">
+            <label id="tradeDialogTradeType"></label>
+            <hr/>
+            <div id="tradeDialogDescription"></div>
+            <br/>
+            <div id="tradeDialogAmountLabel"></div>
+            <input id="tradeDialogAmount" type="number"></input>
+            <br/>
+            <br/>
+            <div>STTW</div>
+            <input id="tradeDialogSTTW" type="number" disabled></input>
+            <br/>
+            <br/>
+            <div>Fee (STTW)</div>
+            <input id="tradeDialogFee" type="number" disabled></input>
+            <br/>
+            <br/>
+            <hr/>
+            <button id="tradeCancel" type="button" onclick="$('#tradeMask').hide();">cancel</button>
+            <button id="tradeConfirm" type="button">trade</button>
+        </div>
+    </div>
 </body>
 
 </html>
