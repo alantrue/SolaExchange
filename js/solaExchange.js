@@ -10,6 +10,7 @@ web3.eth.getAccounts().then(function(r) {
     $("#userAccount").text(account);
 });
 
+var startBlock = 1510129795;
 var feeRate = 0.005;
 var account;
 var dataInitialized = false;
@@ -306,13 +307,13 @@ function sortForOrderBook(orders, type) {
     return sortable;
 }
 
-function refreshPriceChart(sntwAddress, today) {
+function refreshPriceChart(sntwAddress, start) {
     $.ajax({
         url: "/getTrade",
         type: "post",
         dataType: "html",
         data: {
-            timestamp: today
+            timestamp: start
         },
         async: false,
         success: function(r) {
@@ -382,6 +383,16 @@ function toLocalTimestamp(timestamp) {
     return timestamp - d.getTimezoneOffset() * 60 * 1000;
 }
 
+function openBalanceDialog(tokenAddress, operation) {
+    var tokenName = getTokenName(tokenAddress);
+
+    $("#balanceDialogAmountLabel").text(tokenName);
+    $("#balanceDialogAmount").val(0);
+    $("#balanceConfirm").text(operation);
+
+    $("#balanceMask").show();
+}
+
 function openTradeDialog(logId) {
     var e = eventList[logId];
     var rv = e.returnValues;
@@ -418,51 +429,51 @@ function openTradeDialog(logId) {
 
 function bindAll() {
     $("#approveSTTW").click(function() {
-        console.log("approveSTTW");
+        openBalanceDialog(sttwAddress, "Approve");
     });
 
     $("#approveSNTW1").click(function() {
-        console.log("approveSNTW1");
+        openBalanceDialog(sntwAddress1, "Approve");
     });
 
     $("#approveSNTW2").click(function() {
-        console.log("approveSNTW2");
+        openBalanceDialog(sntwAddress2, "Approve");
     });
 
     $("#approveSNTW3").click(function() {
-        console.log("approveSNTW3");
+        openBalanceDialog(sntwAddress3, "Approve");
     });
 
     $("#depositSTTW").click(function() {
-        console.log("depositSTTW");
+        openBalanceDialog(sttwAddress, "Deposit");
     });
 
     $("#depositSNTW1").click(function() {
-        console.log("depositSNTW1");
+        openBalanceDialog(sntwAddress1, "Deposit");
     });
 
     $("#depositSNTW2").click(function() {
-        console.log("depositSNTW2");
+        openBalanceDialog(sntwAddress2, "Deposit");
     });
 
     $("#depositSNTW3").click(function() {
-        console.log("depositSNTW3");
+        openBalanceDialog(sntwAddress3, "Deposit");
     });
 
     $("#withdrawSTTW").click(function() {
-        console.log("withdrawSTTW");
+        openBalanceDialog(sttwAddress, "Withdraw");
     });
 
     $("#withdrawSNTW1").click(function() {
-        console.log("withdrawSNTW1");
+        openBalanceDialog(sntwAddress1, "Withdraw");
     });
 
     $("#withdrawSNTW2").click(function() {
-        console.log("withdrawSNTW2");
+        openBalanceDialog(sntwAddress2, "Withdraw");
     });
 
     $("#withdrawSNTW3").click(function() {
-        console.log("withdrawSNTW3");
+        openBalanceDialog(sntwAddress3, "Withdraw");
     });
 
     $("#pairs").on("click", ".row", function() {
@@ -480,7 +491,7 @@ function bindAll() {
                 break;
         }
         refreshOrder(sntwAddress);
-        refreshPriceChart(sntwAddress, 1510129795);
+        refreshPriceChart(sntwAddress, startBlock);
 
         var id = $(this).data("id");
         var p = allProject.find(function(a) {
@@ -604,6 +615,46 @@ function bindAll() {
         }
     });
 
+    $("#balanceConfirm").click(function() {
+        var token = $("#balanceDialogAmountLabel").text();
+        var tokenContract, tokenAddress;
+        switch (token) {
+            case "STTW":
+                tokenContract = sttw;
+                tokenAddress = sttwAddress;
+                break;
+            case "SNTW1":
+                tokenContract = sntw1;
+                tokenAddress = sntwAddress1;
+                break;
+            case "SNTW2":
+                tokenContract = sntw2;
+                tokenAddress = sntwAddress2;
+                break;
+            case "SNTW3":
+                tokenContract = sntw3;
+                tokenAddress = sntwAddress3;
+                break;
+        }
+
+        var v = $("#balanceDialogAmount").val();
+
+        var operation = $(this).text();
+        switch (operation) {
+            case "Approve":
+                tokenContract.methods.approve(solaExchangeAddress, web3.utils.toWei(v, 'ether')).send({ from: account }).then(console.log);
+                break;
+            case "Deposit":
+                solaExchange.methods.depositToken(tokenAddress, web3.utils.toWei(v, 'ether')).send({ from: account }).then(console.log);
+                break;
+            case "Withdraw":
+                solaExchange.methods.withdrawToken(tokenAddress, web3.utils.toWei(v, 'ether')).send({ from: account }).then(console.log);
+                break;
+        }
+
+        $("#balanceMask").hide();
+    });
+
     $("#tradeConfirm").click(function() {
         var logId = $("#tradeDialog").data("logId");
         var e = eventList[logId];
@@ -628,7 +679,7 @@ function bindAll() {
                 console.log(r);
                 refreshOrder(sntwAddress);
                 refreshTrade();
-                refreshPriceChart(sntwAddress, 1510129795);
+                refreshPriceChart(sntwAddress, startBlock);
             });
 
         $("#tradeMask").hide();
