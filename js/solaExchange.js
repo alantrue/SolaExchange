@@ -108,6 +108,8 @@ function getTokenName(address) {
 }
 
 function refreshPairs() {
+    $("#pairs .row").remove();
+    
     $.getJSON("https://sola-api.herokuapp.com/api/v1/projects", function(data) {
         allProject = data;
         var testType = 0;
