@@ -93,7 +93,7 @@ $(function() {
         allProject = data;
         var testType = 0;
         allProject.forEach(function(item, index) {
-            var pair = $(sprintf("<div data-id='%s' class='row pair clickable'><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div></div>", item.id, "SNTW" + (++testType), item.name, item.date.slice(0, 10), item.capacity, item.decay, "TODO"));
+            var pair = $(sprintf("<div data-id='%s' title='click to select %s' class='row pair clickable'><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div></div>", item.id, "SNTW" + (++testType), "SNTW" + testType, item.name, item.date.slice(0, 10), item.capacity, item.decay, "TODO"));
             if (index < 3) {
                 $("#pairs").append(pair);
             }
@@ -569,6 +569,27 @@ function bindAll() {
         });
     });
 
+    $("#myOrders").on('click', ".row", function() {
+        var logId = $(this).data("logid");
+        if (logId) {
+            var e = eventList[logId];
+            var rv = e.returnValues;
+
+            var r = e.signature.slice(0, 34);
+            var s = '0x' + e.signature.slice(34, 66);
+            var v = '0x' + e.signature.slice(66, 68);
+            v = web3.utils.toDecimal(v) + 27;
+
+            var sntwAddress = (sttwAddress == rv.tokenGet) ? rv.tokenGive : rv.tokenGet;
+
+            solaExchange.methods.cancelOrder(rv.tokenGet, rv.amountGet, rv.tokenGive, rv.amountGive, rv.expires, rv.nonce, v, r, s).send({ from: account })
+                .then(function(r) {
+                    console.log(r);
+                    refreshOrder(sntwAddress);
+                });
+        }
+    });
+
     $("#orderBookBuy").on('click', ".row", function() {
         var logId = $(this).data("logid");
         if (logId) {
@@ -605,7 +626,7 @@ function bindAll() {
         solaExchange.methods.trade(rv.tokenGet, rv.amountGet, rv.tokenGive, rv.amountGive, rv.expires, rv.nonce, rv.user, v, r, s, amountGet).send({ from: account })
             .then(function(r) {
                 console.log(r);
-                refreshOrder();
+                refreshOrder(sntwAddress);
                 refreshTrade();
                 refreshPriceChart(sntwAddress, 1510129795);
             });
