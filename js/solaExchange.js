@@ -109,7 +109,7 @@ function getTokenName(address) {
 
 function refreshPairs() {
     $("#pairs .row").remove();
-    
+
     $.getJSON("https://sola-api.herokuapp.com/api/v1/projects", function(data) {
         allProject = data;
         var testType = 0;
@@ -410,7 +410,7 @@ function refreshPriceChart(sntwAddress, start) {
                 },
                 series: [{
                     type: 'candlestick',
-                    name: 'SNTW Price',
+                    name: 'Price',
                     data: data
                 }],
                 navigator: {
