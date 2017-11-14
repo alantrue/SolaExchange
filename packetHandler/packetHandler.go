@@ -17,7 +17,7 @@ type packet struct {
 type client struct {
 	ID     string
 	Conn   *websocket.Conn
-	Trades map[string]bool
+	Trades map[string]int64
 }
 
 type notify struct {
@@ -28,6 +28,7 @@ type notify struct {
 type trade struct {
 	ID      string
 	TradeNo string
+	Amount  int64
 }
 
 var allClient = map[string]client{}
@@ -38,7 +39,7 @@ var trades = make(chan trade)
 var tradeComplete = make(chan string)
 
 func Join(id string, c *websocket.Conn) {
-	joins <- client{ID: id, Conn: c, Trades: map[string]bool{}}
+	joins <- client{ID: id, Conn: c, Trades: map[string]int64{}}
 }
 
 func Leave(id string) {
@@ -49,8 +50,8 @@ func Notify(id string, result []byte) {
 	notifys <- notify{ID: id, Result: result}
 }
 
-func Trade(id, tradeNo string) {
-	trades <- trade{ID: id, TradeNo: tradeNo}
+func Trade(id, tradeNo string, amount int64) {
+	trades <- trade{ID: id, TradeNo: tradeNo, Amount: amount}
 }
 
 func TradeComplete(tradeNo string) {
@@ -83,15 +84,16 @@ func Do() {
 				}
 			case trade := <-trades:
 				if client, ok := allClient[trade.ID]; ok {
-					client.Trades[trade.TradeNo] = false
+					client.Trades[trade.TradeNo] = trade.Amount
 				}
 			case tradeNo := <-tradeComplete:
 				for _, client := range allClient {
 					if result, ok := client.Trades[tradeNo]; ok {
-						if result == false {
-							client.Trades[tradeNo] = true
+						if result > 0 {
+							amount := client.Trades[tradeNo]
+							client.Trades[tradeNo] = 0
 
-							p := packet{Opcode: "OP_TRADE_OK", Content: `{"msg": "交易成功"}`}
+							p := packet{Opcode: "OP_TRADE_OK", Content: fmt.Sprintf(`{"msg": "交易成功", "amount": %v}`, amount)}
 
 							b, err := json.Marshal(p)
 							if err != nil {

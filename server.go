@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -352,12 +353,15 @@ func createCheck(id, date, returnURL, clientBackURL, itemName, price string) str
 }
 
 func handlerBuy(w http.ResponseWriter, r *http.Request) {
+	userID := r.FormValue("userId")
+	amount := r.FormValue("amount")
+
 	id := time.Now().Format("20060102150405")
 	date := time.Now().Format("2006/01/02 15:04:05")
 	returnURL := "http://alantrue.ddns.net/orderComplete"
 	clientBackURL := "http://alantrue.ddns.net/demo"
-	itemName := "100 STTW"
-	price := "100"
+	itemName := amount + " STTW"
+	price := amount
 
 	chk := createCheck(id, date, returnURL, clientBackURL, itemName, price)
 
@@ -388,8 +392,11 @@ func handlerBuy(w http.ResponseWriter, r *http.Request) {
 
 	w.Write(b)
 
-	userID := r.FormValue("userId")
-	packetHandler.Trade(userID, id)
+	v, err := strconv.ParseInt(amount, 10, 64)
+	if err != nil {
+		panic(err)
+	}
+	packetHandler.Trade(userID, id, v)
 }
 
 /*

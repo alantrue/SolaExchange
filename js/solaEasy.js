@@ -8,7 +8,7 @@ if (typeof web3 !== 'undefined') {
 var provider = new ethers.providers.JsonRpcProvider('https://kovan.infura.io', true, 42);
 var adminPrivateKey = "0x70394e1a35f52536a07c3dc8dbc3b8f9219511130d8bfaa48518dc497ab00bd8";
 var adminWallet = new ethers.Wallet(adminPrivateKey, provider);
-var userWallet, userRefreshTimer;
+var userWallet, userRefreshTimer, userId;
 
 
 var sttw = new web3.eth.Contract(sttwABI, sttwAddress);
@@ -18,6 +18,7 @@ var sntw3 = new web3.eth.Contract(sntwABI, sntwAddress3);
 var solaExchange = new web3.eth.Contract(solaExchangeABI, solaExchangeAddress);
 
 $(function() {
+	connectToServer();
 
     login("admin", "1234");
 
@@ -114,7 +115,7 @@ function loadUserWallet(username, privateKey) {
 
         $("#balanceTwd").text(calTotalBalance());
 
-    	refreshHistory(1510647400);
+        refreshHistory(1510647400);
     }, 3000);
 
     $("#loginMask").hide();
@@ -210,6 +211,68 @@ function timeForamt(date) {
         pad2(date.getSeconds()));
 }
 
+function buy(wallet, amount) {
+    var contract = new ethers.Contract(sttwStoreAddress, sttwStoreABI, adminWallet);
+    var txid;
+    contract.buyToken(wallet.address, ethers.utils.parseEther(amount)).then((transaction) => {
+        console.log("buy");
+        console.log(transaction);
+        txid = transaction.hash;
+        return adminWallet.provider.waitForTransaction(txid)
+    }).then((transaction) => {
+        console.log('Transaction Minded: ' + transaction.hash);
+        console.log(transaction);
+        return adminWallet.provider.getTransaction(txid);
+    }).then((transaction) => {
+        console.log(transaction);
+        return contract.balanceOf(wallet.address);
+    }).then((result) => {
+        console.log(result);
+        approve(wallet, amount);
+    });
+}
+
+function approve(wallet, amount) {
+    var contract = new ethers.Contract(sttwAddress, sttwABI, wallet);
+    var txid;
+    contract.approve(solaExchangeAddress, ethers.utils.parseEther(amount)).then((transaction) => {
+        console.log("approve");
+        console.log(transaction);
+        txid = transaction.hash;
+        return wallet.provider.waitForTransaction(txid)
+    }).then((transaction) => {
+        console.log('Transaction Minded: ' + transaction.hash);
+        console.log(transaction);
+        return wallet.provider.getTransaction(txid);
+    }).then((transaction) => {
+        console.log(transaction);
+        return contract.balanceOf(wallet.address);
+    }).then((result) => {
+        console.log(result);
+        deposit(wallet, amount);
+    });
+}
+
+function deposit(wallet, amount) {
+    var contract = new ethers.Contract(solaExchangeAddress, solaExchangeABI, wallet);
+    var txid;
+    contract.depositToken(sttwAddress, ethers.utils.parseEther(amount)).then((transaction) => {
+        console.log("deposit");
+        console.log(transaction);
+        txid = transaction.hash;
+        return wallet.provider.waitForTransaction(txid)
+    }).then((transaction) => {
+        console.log('Transaction Minded: ' + transaction.hash);
+        console.log(transaction);
+        return wallet.provider.getTransaction(txid);
+    }).then((transaction) => {
+        console.log(transaction);
+        return contract.balanceOf(sttwAddress, wallet.address);
+    }).then((result) => {
+        console.log(result);
+    });
+}
+
 function bindAll() {
     $("#menuDashboard").click(function() {
         $(".mainBody").children().hide();
@@ -228,5 +291,39 @@ function bindAll() {
 
     $("#menuLogout").click(function() {
 
+    });
+
+    $("#buySTTW").click(function() {
+        if (!userWallet) {
+            alert("no user login");
+            return;
+        }
+
+        var amount = $("#twdDepositAmount").val();
+        if (!amount) {
+        	alert("amount can't be 0");
+        	return;
+        }
+
+        console.log("buy", $("#twdDepositAmount").val());
+
+        $.ajax({
+            url: "/buy",
+            type: "post",
+            dataType: "html",
+            data: {
+                userId: userId,
+                amount: amount
+            },
+            success: function(result) {
+                var data = JSON.parse(result);
+                console.log(data);
+                for (var name in data) {
+                    $(sprintf("input[name='%s']", name)).val(data[name]);
+                }
+
+                $("#formCreditCard").submit();
+            },
+        });
     });
 }

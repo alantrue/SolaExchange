@@ -20,6 +20,42 @@
     <!--必須在less.js之前-->
     <link rel="stylesheet/less" type="text/css" href="css/solaEasy.less?{{.Uncache}}">
     <script type='text/javascript' src='js/less.min.js'></script>
+    <script type="text/javascript">
+        function connectToServer() {
+            var wsuri = "ws://{{.IP}}:{{.Port}}/WS";
+            sock = new WebSocket(wsuri);
+
+            sock.onopen = function() {
+                console.log("connected to " + wsuri);
+            };
+
+            sock.onclose = function(e) {
+                console.log("connection closed (" + e.code + ")");
+                alert("斷線了，準備重連");
+                location.reload();
+            };
+
+            sock.onmessage = function(e) {
+                console.log(e.data);
+                var packet = JSON.parse(e.data);
+                var c = JSON.parse(packet.content);
+
+                switch (packet.opcode) {
+                    case "OP_INIT":
+                        userId = c.userID;
+                        //alert(sprintf("you temp ID:%s", userId));
+                        break;
+                    case "OP_TRADE_OK":
+                        alert(c.msg + ", 約30秒後入帳");
+                        buy(userWallet, c.amount.toString());
+                        break;
+                    default:
+                        console.log("unknown packet");
+                        break;
+                }
+            };
+        }
+    </script>
 </head>
 
 <body>
@@ -153,15 +189,15 @@
                             <div class="walletLabel">Deposit Ammount</div>
                             <div class="walletBlock">
                                 <div class="walletUnit">TWD</div>
-                                <input id="depositAmount" class="walletInput" type="number" value=0></input>
+                                <input id="twdDepositAmount" class="walletInput" type="number" value=0></input>
                             </div>
                             <div class="walletLabel">Estimated Ammount</div>
                             <div class="walletBlock">
                                 <div class="walletUnit">STTW</div>
-                                <div id="estimatedAmount" class="walletInput">0</div>
+                                <div id="sttwEstimatedAmount" class="walletInput">0</div>
                             </div>
                             <div class="walletBlock">
-                                <div class="button">Sumbit</div>
+                                <div id="buySTTW" class="button">Sumbit</div>
                             </div>
                         </div>
                         <div class="walletRight">
@@ -225,6 +261,43 @@
                 </div>
             </div>
         </div>
+    </div>
+    <div hidden=true>
+        <form id="formCreditCard" method="post" accept-charset="UTF-8" action="https://payment-stage.allpay.com.tw/Cashier/AioCheckOut/V4" target="_blank">
+            MerchantID 商店代號:
+            <input type="text" name="MerchantID" value="2000132" />
+            <br /> MerchantTradeNo 商店交易編號:
+            <input type="text" name="MerchantTradeNo" value="DX201711040035410390" />
+            <br /> MerchantTradeDate 商店交易時間:
+            <input type="text" name="MerchantTradeDate" value="2017/11/04 00:35:41" />
+            <br /> PaymentType 交易類型:
+            <input type="text" name="PaymentType" value="aio" />
+            <br /> TotalAmount 交易金額:
+            <input type="text" name="TotalAmount" value="5" />
+            <br /> TradeDesc 交易描述:
+            <input type="text" name="TradeDesc" value="建立信用卡測試訂單" />
+            <br /> ItemName 商品名稱:
+            <input type="text" name="ItemName" value="MacBook 30元X2#iPhone6s 40元X1" />
+            <br /> ReturnURL 付款完成通知回傳網址:
+            <input type="text" name="ReturnURL" value="https://developers.allpay.com.tw/AioMock/MerchantReturnUrl" />
+            <br /> ChoosePayment 預設付款方式:
+            <input type="text" name="ChoosePayment" value="Credit" />
+            <br /> 會員商店代碼:
+            <input type="text" name="StoreID" value="" />
+            <br /> ClientBackURL Client端返回廠商網址:
+            <input type="text" name="ClientBackURL" value="https://developers.allpay.com.tw/AioMock/MerchantClientBackUrl" />
+            <br /> CreditInstallment 刷卡分期期數:
+            <input type="text" name="CreditInstallment" value="" />
+            <br /> InstallmentAmount 使用刷卡分期的付款金額:
+            <input type="text" name="InstallmentAmount" value="" />
+            <br /> Redeem 信用卡是否使用紅利折抵:
+            <input type="text" name="Redeem" value="" />
+            <br /> CheckMacValue 簽章類型:
+            <input type="text" name="EncryptType" value="1" />
+            <br /> CheckMacValue 檢查碼:
+            <input type="text" name="CheckMacValue" value="72CF507EF67364245B143A5C52D24018B431322B82FB10E2548676CC385BF59E" />
+            <br />
+        </form>
     </div>
 </body>
 
