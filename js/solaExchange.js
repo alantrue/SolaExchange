@@ -280,14 +280,14 @@ function refreshOrder(selectedSntw) {
                                 $("#orderBookBuy .row").remove();
                                 for (var s in sortBuys) {
                                     var o = sortBuys[s][0];
-                                    var order = $(sprintf("<div id='o_%s' title='click to trade.' data-logid='%s' class='row clickable selectable'><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div></div>", o.nonce, o.logId, formatValue(o.rate, 3), o.sntw, o.remained));
+                                    var order = $(sprintf("<div id='o_%s' title='click to trade.' data-logid='%s' class='row clickable selectable'><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div></div>", o.nonce, o.logId, formatValue(o.rate, 3), o.sntw, formatValue(o.remained, 3)));
                                     $("#orderBookBuy").append(order);
                                 }
 
                                 $("#orderBookSell .row").remove();
                                 for (var s in sortSells) {
                                     var o = sortSells[s][0];
-                                    var order = $(sprintf("<div id='o_%s' title='click to trade.' data-logid='%s' class='row clickable selectable'><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div></div>", o.nonce, o.logId, formatValue(o.rate, 3), o.sntw, o.remained));
+                                    var order = $(sprintf("<div id='o_%s' title='click to trade.' data-logid='%s' class='row clickable selectable'><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div></div>", o.nonce, o.logId, formatValue(o.rate, 3), o.sntw, formatValue(o.remained)));
                                     $("#orderBookSell").append(order);
                                 }
                             }
@@ -296,7 +296,7 @@ function refreshOrder(selectedSntw) {
                                 $("#myOrders .row").remove();
                                 for (var id in myOrders.orders) {
                                     var o = myOrders.orders[id];
-                                    var order = $(sprintf("<div id='mo_%s' title='click to cancel.' data-logid='%s' class='row clickable selectable %s'><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div></div>", o.nonce, o.logId, o.order.toLowerCase(), o.order, getTokenName(o.sntwAddress), formatValue(o.rate, 3), o.sntw, o.remained, o.expires))
+                                    var order = $(sprintf("<div id='mo_%s' title='click to cancel.' data-logid='%s' class='row clickable selectable %s'><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div><div class='cell'>%s</div></div>", o.nonce, o.logId, o.order.toLowerCase(), o.order, getTokenName(o.sntwAddress), formatValue(o.rate, 3), o.sntw, formatValue(o.remained, 3), o.expires))
                                     $("#myOrders").append(order);
                                 }
                             }

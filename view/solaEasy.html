@@ -7,6 +7,7 @@
     <script type="text/javascript" src="js/sprintf.js"></script>
     <!--ether lib-->
     <script type="text/javascript" src="js/web3.min.js"></script>
+    <script type="text/javascript" src="js/ethers.js?{{.Uncache}}"></script>
     <!--contract data-->
     <script type="text/javascript" src="data/solaExchangeABI.js?{{.Uncache}}"></script>
     <script type="text/javascript" src="data/sntwABI.js?{{.Uncache}}"></script>
@@ -76,7 +77,7 @@
                 </div>
                 <div class="barItem">
                     <div class="itemContainer">
-                        <div class="userName">Hi, Yao-Hsin</div>
+                        <div id="username" class="username">Hi, Yao-Hsin</div>
                     </div>
                 </div>
             </div>
@@ -90,9 +91,7 @@
                                         <label class="balanceItemName1">Total Balance</label>
                                         <label class="balanceItemName2 twd">TWD</label>
                                     </div>
-                                    <div class="balanceItemValue">
-                                        130,568
-                                    </div>
+                                    <div id="balanceTwd" class="balanceItemValue">0</div>
                                 </div>
                             </td>
                             <td>
@@ -101,9 +100,7 @@
                                         <label class="balanceItemName1">Solar Token Taiwan</label>
                                         <label class="balanceItemName2 sttw">STTW</label>
                                     </div>
-                                    <div class="balanceItemValue">
-                                        30,568
-                                    </div>
+                                    <div id="balanceSttw" class="balanceItemValue">0</div>
                                 </div>
                             </td>
                         </tr>
@@ -114,9 +111,7 @@
                                         <label class="balanceItemName1">Solar Note Taiwan 1</label>
                                         <label class="balanceItemName2 sntw1">SNTW1</label>
                                     </div>
-                                    <div class="balanceItemValue">
-                                        10,000
-                                    </div>
+                                    <div id="balanceSntw1" class="balanceItemValue">0</div>
                                 </div>
                             </td>
                             <td>
@@ -125,9 +120,7 @@
                                         <label class="balanceItemName1">Solar Note Taiwan 2</label>
                                         <label class="balanceItemName2 sntw2">SNTW2</label>
                                     </div>
-                                    <div class="balanceItemValue">
-                                        0
-                                    </div>
+                                    <div id="balanceSntw2" class="balanceItemValue">0</div>
                                 </div>
                             </td>
                             <td>
@@ -136,9 +129,7 @@
                                         <label class="balanceItemName1">Solar Note Taiwan 3</label>
                                         <label class="balanceItemName2 sntw3">SNTW3</label>
                                     </div>
-                                    <div class="balanceItemValue">
-                                        0
-                                    </div>
+                                    <div id="balanceSntw3" class="balanceItemValue">0</div>
                                 </div>
                             </td>
                         </tr>
@@ -188,7 +179,7 @@
                             </div>
                             <div class="tradeLabel">Estimated Ammount</div>
                             <div class="tradeBlock">
-                                <div class="tradeUnit">                                    
+                                <div class="tradeUnit">
                                     <select>
                                         <option value="1">SNTW1</option>
                                         <option value="2">SNTW2</option>
