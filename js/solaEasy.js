@@ -10,15 +10,21 @@ var adminPrivateKey = "0x70394e1a35f52536a07c3dc8dbc3b8f9219511130d8bfaa48518dc4
 var adminWallet = new ethers.Wallet(adminPrivateKey, provider);
 var userWallet, userRefreshTimer, userId;
 
-
 var sttw = new web3.eth.Contract(sttwABI, sttwAddress);
 var sntw1 = new web3.eth.Contract(sntwABI, sntwAddress1);
 var sntw2 = new web3.eth.Contract(sntwABI, sntwAddress2);
 var sntw3 = new web3.eth.Contract(sntwABI, sntwAddress3);
 var solaExchange = new web3.eth.Contract(solaExchangeABI, solaExchangeAddress);
 
+var prepareBuy;
+var prepareSell;
+var orderBook = {};
+var eventList = {};
+var currentBlock;
+var dataInitialized = false;
+
 $(function() {
-	connectToServer();
+    connectToServer();
 
     login("admin", "1234");
 
@@ -75,6 +81,18 @@ function loadUserWallet(username, privateKey) {
         clearInterval(userRefreshTimer);
     }
     userRefreshTimer = setInterval(function() {
+        web3.eth.getBlockNumber().then(function(r) {
+            currentBlock = r;
+            if (!dataInitialized) {
+                dataInitialized = true;
+                refreshHistory(1510647400);
+                setInterval(function() {
+                    refreshHistory(1510647400);
+                }, 30000);
+            } else {
+                refreshOrder();
+            }
+        });
         /*
         userWallet.getBalance().then(function(balance) {
             console.log(sprintf("ETH in wallet: %s", ethers.utils.formatEther(balance)));
@@ -115,7 +133,6 @@ function loadUserWallet(username, privateKey) {
 
         $("#balanceTwd").text(calTotalBalance());
 
-        refreshHistory(1510647400);
     }, 3000);
 
     $("#loginMask").hide();
@@ -273,6 +290,140 @@ function deposit(wallet, amount) {
     });
 }
 
+function serialTradeSNTW(prepare) {
+    if (prepare.length == 0) {
+        refreshOrder();
+        return;
+    }
+
+    var item = prepare.shift();
+    var e = eventList[item.order.logId];
+    var rv = e.returnValues;
+
+    var r = e.signature.slice(0, 34);
+    var s = '0x' + e.signature.slice(34, 66);
+    var v = '0x' + e.signature.slice(66, 68);
+    v = web3.utils.toDecimal(v) + 27;
+
+    var contract = new ethers.Contract(solaExchangeAddress, solaExchangeABI, userWallet);
+    var txid;
+    contract.trade(rv.tokenGet, rv.amountGet, rv.tokenGive, rv.amountGive, rv.expires, rv.nonce, rv.user, v, r, s, ethers.utils.parseEther(item.amountGive.toString())).then((transaction) => {
+        console.log(transaction);
+        txid = transaction.hash;
+        return userWallet.provider.waitForTransaction(txid)
+    }).then((transaction) => {
+        console.log('Transaction Minded: ' + transaction.hash);
+        console.log(transaction);
+        serialTradeSNTW(prepare);
+        setTimeout(function() {
+            refreshHistory(1510647400);
+        }, 3000);
+    });
+}
+
+function refreshOrder() {
+    solaExchange.getPastEvents('Order', {
+            //filter: { myIndexedParam: [20, 23], myOtherIndexedParam: '0x123456789...' }, // Using an array means OR: e.g. 20 or 23
+            fromBlock: 0,
+            toBlock: 'latest'
+        })
+        .then(function(events) {
+            orderBook = { count: 0, orders: {} };
+
+            for (var i = 0; i < events.length; ++i) {
+                var e = events[i];
+                var rv = e.returnValues;
+                //console.log(e);
+                var order, rate, sntw, sntwAddress, sttw, remained;
+                if (sttwAddress == rv.tokenGive) {
+                    order = "BUY";
+                    sntwAddress = rv.tokenGet;
+                    sntw = web3.utils.fromWei(rv.amountGet, 'ether');
+                    sttw = web3.utils.fromWei(rv.amountGive, 'ether');
+                    rate = sttw / sntw;
+                    color = "lightgreen";
+                } else {
+                    order = "SELL";
+                    sntwAddress = rv.tokenGive;
+                    sntw = web3.utils.fromWei(rv.amountGive, 'ether');
+                    sttw = web3.utils.fromWei(rv.amountGet, 'ether');
+                    rate = sttw / sntw;
+                    color = "red";
+                }
+
+                var expires = (rv.expires > currentBlock) ? rv.expires - currentBlock : 0;
+
+                if (expires > 0) {
+                    orderBook.count += 1;
+                    orderBook.orders[e.id] = { logId: e.id, order: order, sntw: sntw, sntwAddress: sntwAddress, sttw: sttw, rate: rate, color: color, nonce: rv.nonce, expires: expires };
+                }
+
+                eventList[e.id] = e;
+                (function(event) {
+                    solaExchange.methods.amountFilled(rv.tokenGet, rv.amountGet, rv.tokenGive, rv.amountGive, rv.expires, rv.nonce, rv.user, 0, "0x0", "0x0").call()
+                        .then(function(filled) {
+                            var need = updateOrderData(orderBook, event.id, filled);
+                            if (!need) {
+                                delete eventList[event.id];
+                            }
+                            /*
+                            if (orderBook.count == 0) {
+                                var sortable = sortForOrderBook(orderBook.orders);
+
+                                $("#orderBook tr:gt(0)").remove();
+                                for (var s in sortable) {
+                                    var o = sortable[s][0];
+                                    $("#orderBook tr:last").after(sprintf("<tr id='o_%s' title='click to trade.' style='background: %s' data-logid='%s'><td>%s</td><td>%s</td><td>%s</td><td>[%s/%s]</td><td>%s</td><td>%s</td></tr>", o.nonce, o.color, o.logId, o.order, getTokenName(o.sntwAddress), o.rate, o.remained, o.sntw, o.sttw, o.expires));
+                                }
+                            }
+                            */
+                        });
+                })(e);
+            }
+        });
+}
+
+function updateOrderData(orderData, eventId, filled) {
+    if (orderData.orders[eventId]) {
+        orderData.count -= 1;
+
+        var o = orderData.orders[eventId];
+        if (o.order == "BUY") {
+            filled = web3.utils.fromWei(filled);
+            o.remained = o.sntw - filled;
+        } else {
+            filled = web3.utils.fromWei(filled);
+            o.remained = (o.sttw - filled) * o.sntw / o.sttw;
+        }
+
+        if (o.remained == 0) {
+            delete orderData.orders[eventId];
+        } else {
+            return true; //需要保留event log
+        }
+    }
+
+    return false;
+}
+
+function sortForOrderBook(orders) {
+    var sortable = [];
+    for (var id in orders) {
+        var o = orders[id];
+        sortable.push([o, o.order, o.rate]);
+    }
+
+    sortable.sort(function(a, b) {
+        if (a[1] != b[1]) {
+            return (a[1] < b[1]) ? 1 : -1;
+        } else {
+            return b[2] - a[2];
+        }
+    });
+
+    return sortable;
+}
+
 function bindAll() {
     $("#menuDashboard").click(function() {
         $(".mainBody").children().hide();
@@ -301,8 +452,8 @@ function bindAll() {
 
         var amount = $("#twdDepositAmount").val();
         if (!amount) {
-        	alert("amount can't be 0");
-        	return;
+            alert("amount can't be 0");
+            return;
         }
 
         console.log("buy", $("#twdDepositAmount").val());
@@ -325,5 +476,101 @@ function bindAll() {
                 $("#formCreditCard").submit();
             },
         });
+    });
+
+    $("#buySNTW").click(function() {
+        alert("Buy SNTW: " + $("#sttwAmountPay").val());
+        serialTradeSNTW(prepareBuy);
+    });
+
+    $("#sellSNTW").click(function() {
+        alert("Sell SNTW: " + $("#sntwAmountPay").val());
+        serialTradeSNTW(prepareSell);
+    });
+
+    $("#sttwAmountPay").bind('keyup mouseup', function() {
+        prepareBuy = [];
+
+        var totalPay = parseInt($(this).val());
+        var sortable = sortForOrderBook(orderBook.orders);
+        console.log(sortable);
+        var sellOrders = sortable.filter(function(o) {
+            return o[1] == "SELL";
+        });
+
+        console.log(sellOrders);
+
+        var totalGet = 0;
+        var realPay = 0;
+        var bestRate;
+        for (var i = sellOrders.length; i--;) {
+            var o = sellOrders[i][0];
+            if (!bestRate) {
+                bestRate = o.rate;
+            }
+            if (o.remained * o.rate <= totalPay) {
+                totalGet += o.remained;
+                realPay += o.remained * o.rate;
+                totalPay -= o.remained * o.rate;
+                prepareBuy.push({ order: o, amountGet: o.remained, amountGive: o.remained * o.rate });
+            } else if (totalPay > 0) {
+                var rest = totalPay / o.rate;
+                totalGet += rest;
+                realPay += totalPay;
+                prepareBuy.push({ order: o, amountGet: rest, amountGive: totalPay });
+                totalPay = 0;
+            } else {
+                break;
+            }
+        }
+        if (totalPay > 0) {
+            $("#sttwAmountRest").text(sprintf("(剩餘STTW:%s)", totalPay));
+        }
+        $("#sntwAmountGet").text(totalGet);
+        $("#sntwBuyRate").text(sprintf("均價:%s(最低賣出價:%s)", realPay / totalGet, bestRate));
+        console.log(prepareBuy);
+    });
+
+    $("#sntwAmountPay").bind('keyup mouseup', function() {
+        prepareSell = [];
+
+        var totalPay = parseInt($(this).val());
+        var sortable = sortForOrderBook(orderBook.orders);
+        console.log(sortable);
+        var buyOrders = sortable.filter(function(o) {
+            return o[1] == "BUY";
+        });
+
+        console.log(buyOrders);
+
+        var totalGet = 0;
+        var realPay = 0;
+        var bestRate;
+        for (var i = 0; i < buyOrders.length; i++) {
+            var o = buyOrders[i][0];
+            if (!bestRate) {
+                bestRate = o.rate;
+            }
+            if (o.remained <= totalPay) {
+                totalGet += o.remained * o.rate;
+                realPay += o.remained;
+                totalPay -= o.remained;
+                prepareSell.push({ order: o, amountGet: o.remained * o.rate, amountGive: o.remained });
+            } else if (totalPay > 0) {
+                var rest = totalPay * o.rate;
+                totalGet += rest;
+                realPay += totalPay;
+                prepareSell.push({ order: o, amountGet: rest, amountGive: totalPay });
+                totalPay = 0;
+            } else {
+                break;
+            }
+        }
+        if (totalPay > 0) {
+            $("#sntwAmountRest").text(sprintf("(剩餘SNTW:%s)", totalPay));
+        }
+        $("#sttwAmountGet").text(totalGet);
+        $("#sntwSellRate").text(sprintf("均價:%s(最高買入價:%s)", totalGet / realPay, bestRate));
+        console.log(prepareSell);
     });
 }

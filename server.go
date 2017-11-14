@@ -305,7 +305,7 @@ func handlerGetTrade(w http.ResponseWriter, r *http.Request) {
 		`SELECT B.timestamp, A.transaction_hash, A.token_get, A.token_give, A.amount_get, A.amount_give, A.get, A.give FROM trade A 
 	    LEFT JOIN block B ON A.block_number = B.number
 	    WHERE B.timestamp IS NOT NULL AND timestamp > %v 
-	    ORDER BY B.timestamp;`, timestamp))
+	    ORDER BY B.timestamp DESC;`, timestamp))
 
 	if err != nil {
 		log.Println("Query Error", err)
