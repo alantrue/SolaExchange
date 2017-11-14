@@ -28,19 +28,19 @@
             <div class="logo">
                 <img src="img/easyLogo.png">
             </div>
-            <div class="menuItem">
+            <div id="menuDashboard" class="menuItem">
                 <img class="menuIcon" src="img/dashboard.png">
                 <label class="menuLabel">Dashboard</label>
             </div>
-            <div class="menuItem">
+            <div id="menuWallet" class="menuItem">
                 <img class="menuIcon" src="img/wallet.png">
                 <label class="menuLabel">My Wallet</label>
             </div>
-            <div class="menuItem">
+            <div id="menuTrade" class="menuItem">
                 <img class="menuIcon" src="img/trade.png">
                 <label class="menuLabel">Trade</label>
             </div>
-            <div class="menuItem">
+            <div id="menuLogout" class="menuItem">
                 <img class="menuIcon" src="img/logout.png">
                 <label class="menuLabel">Logout</label>
             </div>
@@ -81,7 +81,7 @@
                 </div>
             </div>
             <div class="mainBody">
-                <div>
+                <div id="dashboard">
                     <table class="balance">
                         <tr>
                             <td>
@@ -143,18 +143,42 @@
                             </td>
                         </tr>
                     </table>
+                    <div class="history">
+                        <table class="historyTable">
+                            <tr>
+                                <th>Type</th>
+                                <th>Status</th>
+                                <th>Timestamp</th>
+                                <th>Token</th>
+                                <th>Size</th>
+                                <th>Amount(TWD)</th>
+                            </tr>
+                        </table>
+                    </div>
                 </div>
-                <div class="history">
-                    <table class="historyTable">
-                        <tr>
-                            <th>Type</th>
-                            <th>Status</th>
-                            <th>Timestamp</th>
-                            <th>Token</th>
-                            <th>Size</th>
-                            <th>Amount(TWD)</th>
-                        </tr>
-                    </table>
+                <div id="wallet">
+                    <div class="walletContainer">
+                        <div class="walletLeft">
+                            <div class="walletLabel">Deposit Ammount</div>
+                            <div class="walletBlock">
+                                <div class="walletUnit">TWD</div>
+                                <input id="depositAmount" class="walletInput" type="number" value=0></input>
+                            </div>
+                            <div class="walletLabel">Estimated Ammount</div>
+                            <div class="walletBlock">
+                                <div class="walletUnit">STTW</div>
+                                <div id="estimatedAmount" class="walletInput">0</div>
+                            </div>
+                            <div class="walletBlock">
+                                <div class="button">Sumbit</div>
+                            </div>
+                        </div>
+                        <div class="walletRight">
+                            <div class="walletDescription">1 TWD = 1 SSTW</div>
+                        </div>
+                    </div>
+                </div>
+                <div id="trade">
                 </div>
             </div>
         </div>
