@@ -1,0 +1,160 @@
+* {
+    margin: 0;
+    padding: 0;
+    font-family: "Open Sans", sans-serif;
+}
+
+.page {
+    width: 100%;
+    height: 100%;
+    min-height: 100vh;
+    display: flex;
+    overflow-y: auto;
+}
+
+.menu {
+    width: 150px;
+    background: #f7a116;
+}
+
+.logo {
+    background: black;
+    padding: 1em 0.7em;
+}
+
+.menuItem {
+    padding: 1.5em 0 0.5em 0;
+}
+
+.menuItem:hover {
+    background: #e6c06e;
+}
+
+.menuIcon {
+    max-width: 4em;
+    display: table;
+    margin: 0 auto;
+}
+
+.menuLabel {
+    display: table;
+    margin: 0.5em auto;
+}
+
+img {
+    max-width: 100%;
+}
+
+.main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.mainBar {
+    height: 76px;
+    display: flex;
+}
+
+.barItem {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+}
+
+.itemContainer {
+    align-self: center;
+    text-align: center;
+}
+
+.priceName {
+	display: inline-block;
+	min-width: 4em;
+	border-radius: 0.7em;
+	padding: 0.3em 0.5em;
+	margin-bottom: 0.5em;
+	color: white;
+	background: lightskyblue;
+}
+
+.bid {
+	margin-right: 0.5em;
+}
+
+.ask {
+	margin-left: 0.5em;
+	color: red;
+}
+
+.userName {
+	font-size: 2em;
+}
+
+.mainBody {
+    flex: 1;
+    background: lightgrey;
+    display: flex;
+    flex-direction: column;
+}
+
+.balance {
+	width: 100%;
+	border-collapse:separate;
+  	border-spacing: 1em;
+}
+
+tr {
+    text-align: center;
+    position: relative;
+}
+
+.balanceItemName {
+	background: white;
+	padding: 1em;
+	margin-bottom: 0.2em;
+	overflow: auto;
+	border-radius: 5px 5px 0 0;
+}
+
+.balanceItemName1 {
+	float: left;	
+	padding: 0.3em 0.5em;
+}
+
+.balanceItemName2 {
+	float: right;
+	min-width: 4em;
+	padding: 0.3em 0.5em;
+	border-radius: 0.7em;
+	color: white;
+	background: lightskyblue;
+}
+
+.balanceItemValue {
+	background: white;
+	padding: 0.5em;
+	font-size: 2em;
+	border-radius: 0 0 5px 5px;
+}
+
+.history {
+	margin: 0 1em 1em 1em;
+	background: white;
+	padding: 1em;
+	border-radius: 5px;
+}
+
+.historyTable {
+	width: 100%;
+	border-collapse: collapse;
+}
+
+.historyTable th {
+	border-bottom: 2px solid black;
+	line-height: 2em;
+}
+
+.historyTable td {
+	border-bottom: 1px solid lightgrey;
+	line-height: 2em;
+}

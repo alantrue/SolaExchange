@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <!--utils lib-->
+    <script type="text/javascript" src="js/jquery.js"></script>
+    <script type="text/javascript" src="js/sprintf.js"></script>
+    <!--ether lib-->
+    <script type="text/javascript" src="js/web3.min.js"></script>
+    <!--contract data-->
+    <script type="text/javascript" src="data/solaExchangeABI.js?{{.Uncache}}"></script>
+    <script type="text/javascript" src="data/sntwABI.js?{{.Uncache}}"></script>
+    <script type="text/javascript" src="data/sttwABI.js?{{.Uncache}}"></script>
+    <script type="text/javascript" src="data/sttwStoreABI.js?{{.Uncache}}"></script>
+    <!--icon-->
+    <link rel="stylesheet" type="text/css" href="lib/fontawesome/css/font-awesome.css" />
+    <!--my code-->
+    <script type="text/javascript" src="js/solaEasy.js?{{.Uncache}}"></script>
+    <!--必須在less.js之前-->
+    <link rel="stylesheet/less" type="text/css" href="css/solaEasy.less?{{.Uncache}}">
+    <script type='text/javascript' src='js/less.min.js'></script>
+</head>
+
+<body>
+    <title>Sola Easy</title>
+    <div class="page">
+        <div class="menu">
+            <div class="logo">
+                <img src="img/easyLogo.png">
+            </div>
+            <div class="menuItem">
+                <img class="menuIcon" src="img/dashboard.png">
+                <label class="menuLabel">Dashboard</label>
+            </div>
+            <div class="menuItem">
+                <img class="menuIcon" src="img/wallet.png">
+                <label class="menuLabel">My Wallet</label>
+            </div>
+            <div class="menuItem">
+                <img class="menuIcon" src="img/trade.png">
+                <label class="menuLabel">Trade</label>
+            </div>
+            <div class="menuItem">
+                <img class="menuIcon" src="img/logout.png">
+                <label class="menuLabel">Logout</label>
+            </div>
+        </div>
+        <div class="main">
+            <div class="mainBar">
+                <div class="barItem">
+                    <div class="itemContainer">
+                        <div class="priceName">SNTW1</div>
+                        <div class="priceValue">
+                            <label class="bid">BID:110.00</label>
+                            <label class="ask">ASK:99.1</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="barItem">
+                    <div class="itemContainer">
+                        <div class="priceName">SNTW2</div>
+                        <div class="priceValue">
+                            <label class="bid">BID:110.00</label>
+                            <label class="ask">ASK:99.1</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="barItem">
+                    <div class="itemContainer">
+                        <div class="priceName">SNTW3</div>
+                        <div class="priceValue">
+                            <label class="bid">BID:110.00</label>
+                            <label class="ask">ASK:99.1</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="barItem">
+                    <div class="itemContainer">
+                        <div class="userName">Hi, Yao-Hsin</div>
+                    </div>
+                </div>
+            </div>
+            <div class="mainBody">
+                <div>
+                    <table class="balance">
+                        <tr>
+                            <td>
+                                <div class="balanceItem">
+                                    <div class="balanceItemName">
+                                        <label class="balanceItemName1">Total Balance</label>
+                                        <label class="balanceItemName2">TWD</label>
+                                    </div>
+                                    <div class="balanceItemValue">
+                                        130,568
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="balanceItem">
+                                    <div class="balanceItemName">
+                                        <label class="balanceItemName1">Solar Token Taiwan</label>
+                                        <label class="balanceItemName2">STTW</label>
+                                    </div>
+                                    <div class="balanceItemValue">
+                                        30,568
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class="balanceItem">
+                                    <div class="balanceItemName">
+                                        <label class="balanceItemName1">Solar Note Taiwan 1</label>
+                                        <label class="balanceItemName2">SNTW1</label>
+                                    </div>
+                                    <div class="balanceItemValue">
+                                        10,000
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="balanceItem">
+                                    <div class="balanceItemName">
+                                        <label class="balanceItemName1">Solar Note Taiwan 2</label>
+                                        <label class="balanceItemName2">SNTW2</label>
+                                    </div>
+                                    <div class="balanceItemValue">
+                                        0
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="balanceItem">
+                                    <div class="balanceItemName">
+                                        <label class="balanceItemName1">Solar Note Taiwan 3</label>
+                                        <label class="balanceItemName2">SNTW3</label>
+                                    </div>
+                                    <div class="balanceItemValue">
+                                        0
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="history">
+                    <table class="historyTable">
+                        <tr>
+                            <th>Type</th>
+                            <th>Status</th>
+                            <th>Timestamp</th>
+                            <th>Token</th>
+                            <th>Size</th>
+                            <th>Amount(TWD)</th>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
