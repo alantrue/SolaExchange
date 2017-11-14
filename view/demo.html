@@ -273,11 +273,24 @@
         $("#sttwAmountPay").bind('keyup mouseup', function() {
             prepareBuy = [];
 
-            var totalPay = parseInt($(this).val());
+            var sntwAddress;
+            switch ($("#sntwTokenBuy option:selected").text()) {
+                case "SNTW1":
+                    sntwAddress = sntwAddress1;
+                    break;
+                case "SNTW2":
+                    sntwAddress = sntwAddress2;
+                    break;
+                case "SNTW3":
+                    sntwAddress = sntwAddress3;
+                    break;
+            }
+
+            var totalPay = parseFloat($(this).val());
             var sortable = sortForOrderBook(orderBook.orders);
             console.log(sortable);
             var sellOrders = sortable.filter(function(o) {
-                return o[1] == "SELL";
+                return o[1] == "SELL" && o[3] == sntwAddress;
             });
 
             console.log(sellOrders);
@@ -317,11 +330,24 @@
         $("#sntwAmountPay").bind('keyup mouseup', function() {
             prepareSell = [];
 
-            var totalPay = parseInt($(this).val());
+            var sntwAddress;
+            switch ($("#sntwTokenSell option:selected").text()) {
+                case "SNTW1":
+                    sntwAddress = sntwAddress1;
+                    break;
+                case "SNTW2":
+                    sntwAddress = sntwAddress2;
+                    break;
+                case "SNTW3":
+                    sntwAddress = sntwAddress3;
+                    break;
+            }
+
+            var totalPay = parseFloat($(this).val());
             var sortable = sortForOrderBook(orderBook.orders);
             console.log(sortable);
             var buyOrders = sortable.filter(function(o) {
-                return o[1] == "BUY";
+                return o[1] == "BUY" && o[3] == sntwAddress;
             });
 
             console.log(buyOrders);
@@ -672,17 +698,17 @@
                     break;
                 case "2":
                     tokenAddress = sntwAddress2;
-                    tokenContract= sntw2;
+                    tokenContract = sntw2;
                     break;
                 case "3":
                     tokenAddress = sntwAddress3;
                     tokenContract = sntw3;
                     break;
             }
-            
+
             tokenContract.methods.allowance(account, solaExchangeAddress).call().then(function(r) {
-                        alert(sprintf("you can deposit %s (%s)", web3.utils.fromWei(r, 'ether') , getTokenName(tokenAddress)));
-                    });
+                alert(sprintf("you can deposit %s (%s)", web3.utils.fromWei(r, 'ether'), getTokenName(tokenAddress)));
+            });
         });
 
         $("#btnWithdrawToken").click(function() {
@@ -879,7 +905,7 @@
             var sortable = [];
             for (var id in orders) {
                 var o = orders[id];
-                sortable.push([o, o.order, o.rate]);
+                sortable.push([o, o.order, o.rate, o.sntwAddress]);
             }
 
             sortable.sort(function(a, b) {
@@ -1427,7 +1453,6 @@
                 <button type="button" id="btnDepositToken">Deposit</button>
                 <button type="button" id="btnWithdrawToken">Withdraw</button>
                 <button type="button" id="btnAllowanceToken">Allowance</button>
-                
                 <hr/>
                 <!--select id="generateToken">
                 <option value="1">SNTW1</option>

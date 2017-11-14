@@ -100,7 +100,7 @@ function formatValue(v, precision) {
         precision = 6;
     }
     var precision = Math.pow(10, precision);
-    return Math.floor(v * precision) / precision;
+    return Math.round(v * precision) / precision;
 }
 
 function getTokenName(address) {

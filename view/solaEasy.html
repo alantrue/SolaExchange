@@ -88,8 +88,8 @@
                     <div class="itemContainer">
                         <div class="priceName sntw1">SNTW1</div>
                         <div class="priceValue">
-                            <label class="bid">BID:110.00</label>
-                            <label class="ask">ASK:99.1</label>
+                            <label class="bid">BID:<span id="sntwBid1"></span></label>
+                            <label class="ask">ASK:<span id="sntwAsk1"></span></label>
                         </div>
                     </div>
                 </div>
@@ -97,8 +97,8 @@
                     <div class="itemContainer">
                         <div class="priceName sntw2">SNTW2</div>
                         <div class="priceValue">
-                            <label class="bid">BID:110.00</label>
-                            <label class="ask">ASK:99.1</label>
+                            <label class="bid">BID:<span id="sntwBid2"></span></label>
+                            <label class="ask">ASK:<span id="sntwAsk2"></span></label>
                         </div>
                     </div>
                 </div>
@@ -106,8 +106,8 @@
                     <div class="itemContainer">
                         <div class="priceName sntw3">SNTW3</div>
                         <div class="priceValue">
-                            <label class="bid">BID:110.00</label>
-                            <label class="ask">ASK:99.1</label>
+                            <label class="bid">BID:<span id="sntwBid3"></span></label>
+                            <label class="ask">ASK:<span id="sntwAsk3"></span></label>
                         </div>
                     </div>
                 </div>
@@ -186,12 +186,12 @@
                 <div id="wallet">
                     <div class="walletContainer">
                         <div class="walletLeft">
-                            <div class="walletLabel">Deposit Ammount</div>
+                            <div class="walletLabel">Deposit Amount</div>
                             <div class="walletBlock">
                                 <div class="walletUnit">TWD</div>
                                 <input id="twdDepositAmount" class="walletInput" type="number" value=0></input>
                             </div>
-                            <div class="walletLabel">Estimated Ammount</div>
+                            <div class="walletLabel">Estimated Amount</div>
                             <div class="walletBlock">
                                 <div class="walletUnit">STTW</div>
                                 <div id="sttwEstimatedAmount" class="walletInput">0</div>
@@ -208,15 +208,15 @@
                 <div id="trade">
                     <div class="tradeContainer">
                         <div class="tradeLeft">
-                            <div class="tradeLabel">BID Ammount</div>
+                            <div class="tradeLabel">BID Amount</div>
                             <div class="tradeBlock">
                                 <div class="tradeUnit">STTW</div>
                                 <input id="sttwAmountPay" class="tradeInput" type="number" value=0></input>
                             </div>
-                            <div class="tradeLabel">Estimated Ammount</div>
+                            <div class="tradeLabel">Estimated Amount</div>
                             <div class="tradeBlock">
                                 <div class="tradeUnit">
-                                    <select>
+                                    <select id="sntwTokenBuy">
                                         <option value="1">SNTW1</option>
                                         <option value="2">SNTW2</option>
                                         <option value="3">SNTW3</option>
@@ -234,20 +234,20 @@
                     </div>
                     <div class="tradeContainer">
                         <div class="tradeLeft">
-                            <div class="tradeLabel">ASK Ammount</div>
-                            <div class="tradeBlock">
-                                <div class="tradeUnit">STTW</div>
-                                <input id="sntwAmountPay" class="tradeInput" type="number" value=0></input>
-                            </div>
-                            <div class="tradeLabel">Estimated Ammount</div>
+                            <div class="tradeLabel">ASK Amount</div>
                             <div class="tradeBlock">
                                 <div class="tradeUnit">
-                                    <select>
+                                    <select id="sntwTokenSell">
                                         <option value="1">SNTW1</option>
                                         <option value="2">SNTW2</option>
                                         <option value="3">SNTW3</option>
                                     </select>
                                 </div>
+                                <input id="sntwAmountPay" class="tradeInput" type="number" value=0></input>
+                            </div>
+                            <div class="tradeLabel">Estimated Amount</div>
+                            <div class="tradeBlock">                            
+                                <div class="tradeUnit">STTW</div>
                                 <div id="sttwAmountGet" class="tradeInput">0</div>
                             </div>
                             <div class="tradeBlock">
