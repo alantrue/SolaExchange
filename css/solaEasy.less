@@ -68,26 +68,25 @@ img {
 }
 
 .priceName {
-	display: inline-block;
-	min-width: 4em;
-	border-radius: 0.7em;
-	padding: 0.3em 0.5em;
-	margin-bottom: 0.5em;
-	color: white;
-	background: lightskyblue;
+    display: inline-block;
+    min-width: 4em;
+    border-radius: 0.7em;
+    padding: 0.3em 0.5em;
+    margin-bottom: 0.5em;
+    color: white;
 }
 
 .bid {
-	margin-right: 0.5em;
+    margin-right: 0.5em;
 }
 
 .ask {
-	margin-left: 0.5em;
-	color: red;
+    margin-left: 0.5em;
+    color: red;
 }
 
 .userName {
-	font-size: 2em;
+    font-size: 2em;
 }
 
 .mainBody {
@@ -98,9 +97,9 @@ img {
 }
 
 .balance {
-	width: 100%;
-	border-collapse:separate;
-  	border-spacing: 1em;
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 1em;
 }
 
 tr {
@@ -109,124 +108,168 @@ tr {
 }
 
 .balanceItemName {
-	background: white;
-	padding: 1em;
-	margin-bottom: 0.2em;
-	overflow: auto;
-	border-radius: 5px 5px 0 0;
+    background: white;
+    padding: 1em;
+    margin-bottom: 0.2em;
+    overflow: auto;
+    border-radius: 5px 5px 0 0;
 }
 
 .balanceItemName1 {
-	float: left;	
-	padding: 0.3em 0.5em;
+    float: left;
+    padding: 0.3em 0.5em;
 }
 
 .balanceItemName2 {
-	float: right;
-	min-width: 4em;
-	padding: 0.3em 0.5em;
-	border-radius: 0.7em;
-	color: white;
-	background: lightskyblue;
+    float: right;
+    min-width: 4em;
+    padding: 0.3em 0.5em;
+    border-radius: 0.7em;
+    color: white;
 }
 
 .balanceItemValue {
-	background: white;
-	padding: 0.5em;
-	font-size: 2em;
-	border-radius: 0 0 5px 5px;
+    background: white;
+    padding: 0.5em;
+    font-size: 2em;
+    border-radius: 0 0 5px 5px;
 }
 
 .history {
-	margin: 0 1em 1em 1em;
-	background: white;
-	padding: 1em;
-	border-radius: 5px;
+    margin: 0 1em 1em 1em;
+    background: white;
+    padding: 1em;
+    border-radius: 5px;
 }
 
 .historyTable {
-	width: 100%;
-	border-collapse: collapse;
+    width: 100%;
+    border-collapse: collapse;
 }
 
 .historyTable th {
-	border-bottom: 2px solid lightgrey;
-	line-height: 2em;
+    border-bottom: 2px solid lightgrey;
+    line-height: 2em;
 }
 
 .historyTable td {
-	border-bottom: 1px solid lightgrey;
-	line-height: 2em;
+    border-bottom: 1px solid lightgrey;
+    line-height: 2em;
 }
 
-.walletContainer {
-	flex:1;
-	height: 250px;
-	margin: 1em;
-	padding: 1em;
-	border-radius: 5px;
-	background: white;
-	display: flex;
+.walletContainer,
+.tradeContainer {
+    flex: 1;
+    height: 250px;
+    margin: 1em;
+    padding: 1em;
+    border-radius: 5px;
+    background: white;
+    display: flex;
 }
 
-.walletLeft {
-	flex: 1;
-	padding: 2em;
+.walletLeft,
+.tradeLeft {
+    flex: 1;
+    padding: 2em;
     border-right: 2px solid lightgrey;
 }
 
-.walletLabel {
-	font-weight: bold;
+.walletLabel,
+.tradeLabel {
+    font-weight: bold;
 }
 
-.walletBlock {
-	width: 100%;
-	display: flex;
-	margin: 0.5em 0 2em 0;
+.walletBlock,
+.tradeBlock {
+    width: 100%;
+    display: flex;
+    margin: 0.5em 0 2em 0;
 }
 
-.walletUnit {
-	display: inline-block;
-	height: 1em;
-	width: 5em;
-	padding: 0.3em;
-	border: 1px solid grey;
-	border-right: 0px;
-	text-align: center;
-	font-size: 1em;
+.walletUnit,
+.tradeUnit {
+    display: inline-block;
+    height: 1em;
+    width: 5em;
+    padding: 0.3em;
+    border: 1px solid grey;
+    border-right: 0px;
+    text-align: center;
+    font-size: 1em;
 }
 
-.walletInput {
-	flex: 1;
-	padding: 0.2em;
-	border: 1px solid grey;
-	font-size: 1em;
+.tradeUnit select {
+    border-style: none;
+}
+
+.walletInput,
+.tradeInput {
+    flex: 1;
+    padding: 0.2em;
+    border: 1px solid grey;
+    font-size: 1em;
+}
+
+.walletRight,
+.tradeRight {
+    width: 350px;
+    height: 200px;
+    margin: 1em;
+    background: lightyellow;
+    display: flex;
+    align-self: center;
+    text-align: center;
+}
+
+.walletDescription,
+.tradeDescription {
+    flex: 1;
+    font-size: 2em;
+    color: grey;
+    align-self: center;
+    padding: 1em;
+}
+
+.tradeDescription {
+    text-align: left;
+    color: darkred;
 }
 
 .button {
-	min-width: 4em;
-	background: deepskyblue;
-	padding: 0.5em;
-	text-align: center;
-	color: white;
-	border-radius: 5px;
-	cursor: pointer;
+    min-width: 4em;
+    background: deepskyblue;
+    padding: 0.5em;
+    text-align: center;
+    color: white;
+    border-radius: 5px;
+    cursor: pointer;
 }
 
-.walletRight {
-	width: 350px;
-	height: 200px;
-	margin: 1em;
-	background: lightyellow;
-	display: flex;
-	align-self: center;
-    text-align: center;
+.button.ask {
+    background: red;
 }
 
-.walletDescription {
-	flex: 1;
-	font-size: 2em;
-	color: grey;
-	align-self: center;
-    text-align: center;
+.button.bid {
+    background: green;
+}
+
+.twd {
+    background: darkslateblue;
+}
+
+.sttw {
+    background: goldenrod;
+}
+
+.sntw1 {
+    background: royalblue;
+}
+
+.sntw2 {
+    background: darkturquoise;
+}
+
+.sntw3 {
+    background: gray;
 }
