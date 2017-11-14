@@ -65,6 +65,7 @@ func main() {
 
 	http.HandleFunc("/WS", handlerWS)
 	http.HandleFunc("/SolaExchange", handlerSolaExchange)
+	http.HandleFunc("/SolaEasy", handlerSolaEasy)
 	http.HandleFunc("/demo", handlerDemo)
 	http.HandleFunc("/buy", handlerBuy)
 	http.HandleFunc("/test", handlerTest)
@@ -150,7 +151,29 @@ func handlerSolaExchange(w http.ResponseWriter, r *http.Request) {
 		Port    string
 		Uncache string
 	}{
-		IP:      "localhost", //"alantrue.ddns.net",
+		IP:      "alantrue.ddns.net",
+		Port:    gPort,
+		Uncache: time.Now().Format("20060102150405"),
+	}
+
+	err = t.Execute(w, data)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func handlerSolaEasy(w http.ResponseWriter, r *http.Request) {
+	t, err := template.ParseFiles("view/solaEasy.html")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	data := struct {
+		IP      string
+		Port    string
+		Uncache string
+	}{
+		IP:      "alantrue.ddns.net",
 		Port:    gPort,
 		Uncache: time.Now().Format("20060102150405"),
 	}
