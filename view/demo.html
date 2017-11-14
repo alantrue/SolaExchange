@@ -1066,7 +1066,8 @@
                 type: "post",
                 dataType: "html",
                 data: {
-                    userId: userId
+                    userId: userId,
+                    amount: 100
                 },
                 success: function(result) {
                     var data = JSON.parse(result);
@@ -1168,7 +1169,7 @@
                         break;
                     case "OP_TRADE_OK":
                         alert(c.msg + ", 約30秒後入帳");
-                        buy(userWallet, "100");
+                        buy(userWallet, c.amount.toString());
                         /*
                         sttwStore.methods.buyToken(account, web3.utils.toWei(100, 'ether')).send({ from: account })
                             .then(function(r) {
