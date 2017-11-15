@@ -196,7 +196,7 @@ func handlerDemo(w http.ResponseWriter, r *http.Request) {
 		Port    string
 		Uncache string
 	}{
-		IP:      "localhost", //"alantrue.ddns.net",
+		IP:      "alantrue.ddns.net",
 		Port:    gPort,
 		Uncache: time.Now().Format("20060102150405"),
 	}
