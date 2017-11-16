@@ -25,6 +25,7 @@ var sntw1 = new web3.eth.Contract(sntwABI, sntwAddress1);
 var sntw2 = new web3.eth.Contract(sntwABI, sntwAddress2);
 var sntw3 = new web3.eth.Contract(sntwABI, sntwAddress3);
 var solaExchange = new web3.eth.Contract(solaExchangeABI, solaExchangeAddress);
+var selectSntwAddress;
 
 $(function() {
     bindAll();
@@ -49,6 +50,9 @@ $(function() {
                     refreshTrade();
                 } else {
                     refreshExpires();
+                    if (selectSntwAddress) {
+                        refreshOrder(selectSntwAddress);
+                    }
                 }
             });
 
@@ -597,6 +601,7 @@ function bindAll() {
 
         $("#orderToken").text(pair);
 
+        selectSntwAddress = sntwAddress;
         refreshOrder(sntwAddress);
         refreshPriceChart(sntwAddress, startBlock);
 
