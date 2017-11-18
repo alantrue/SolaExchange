@@ -129,9 +129,11 @@ tr {
 
 .balanceItemValue {
     background: white;
+    min-height: 1em;
     padding: 0.5em;
     font-size: 2em;
     border-radius: 0 0 5px 5px;
+    position: relative;
 }
 
 .history {
@@ -146,7 +148,7 @@ tr {
     border-collapse: collapse;
 }
 
-.historyTable tr {	
+.historyTable tr {
     text-align: right;
 }
 
@@ -275,4 +277,30 @@ tr {
 
 .sntw3 {
     background: gray;
+}
+
+.loaderWapper {
+    min-height: 2em;
+    position: relative;
+}
+
+.loader {
+    border: 0.1em solid #f3f3f3;
+    border-top: 0.1em solid grey;
+    border-radius: 50%;
+    width: 1em;
+    height: 1em;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% {
+        transform: translate(-50%, -50%) rotate(0deg);
+    }
+    100% {
+        transform: translate(-50%, -50%) rotate(360deg);
+    }
 }

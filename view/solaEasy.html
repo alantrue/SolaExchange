@@ -21,40 +21,40 @@
     <link rel="stylesheet/less" type="text/css" href="css/solaEasy.less?{{.Uncache}}">
     <script type='text/javascript' src='js/less.min.js'></script>
     <script type="text/javascript">
-        function connectToServer() {
-            var wsuri = "ws://{{.IP}}:{{.Port}}/WS";
-            sock = new WebSocket(wsuri);
+    function connectToServer() {
+        var wsuri = "ws://{{.IP}}:{{.Port}}/WS";
+        sock = new WebSocket(wsuri);
 
-            sock.onopen = function() {
-                console.log("connected to " + wsuri);
-            };
+        sock.onopen = function() {
+            console.log("connected to " + wsuri);
+        };
 
-            sock.onclose = function(e) {
-                console.log("connection closed (" + e.code + ")");
-                alert("斷線了，準備重連");
-                location.reload();
-            };
+        sock.onclose = function(e) {
+            console.log("connection closed (" + e.code + ")");
+            alert("斷線了，準備重連");
+            location.reload();
+        };
 
-            sock.onmessage = function(e) {
-                console.log(e.data);
-                var packet = JSON.parse(e.data);
-                var c = JSON.parse(packet.content);
+        sock.onmessage = function(e) {
+            console.log(e.data);
+            var packet = JSON.parse(e.data);
+            var c = JSON.parse(packet.content);
 
-                switch (packet.opcode) {
-                    case "OP_INIT":
-                        userId = c.userID;
-                        //alert(sprintf("you temp ID:%s", userId));
-                        break;
-                    case "OP_TRADE_OK":
-                        alert(c.msg + ", 約30秒後入帳");
-                        buy(userWallet, c.amount.toString());
-                        break;
-                    default:
-                        console.log("unknown packet");
-                        break;
-                }
-            };
-        }
+            switch (packet.opcode) {
+                case "OP_INIT":
+                    userId = c.userID;
+                    //alert(sprintf("you temp ID:%s", userId));
+                    break;
+                case "OP_TRADE_OK":
+                    alert(c.msg + ", 約30秒後入帳");
+                    buy(userWallet, c.amount.toString());
+                    break;
+                default:
+                    console.log("unknown packet");
+                    break;
+            }
+        };
+    }
     </script>
 </head>
 
@@ -87,27 +87,36 @@
                 <div class="barItem">
                     <div class="itemContainer">
                         <div class="priceName sntw1">SNTW1</div>
-                        <div class="priceValue">
+                        <div class="priceValue" hidden="true">
                             <label class="bid">BID:<span id="sntwBid1"></span></label>
                             <label class="ask">ASK:<span id="sntwAsk1"></span></label>
+                        </div>
+                        <div class="loaderWapper valueLoader">
+                            <div class="loader"></div>
                         </div>
                     </div>
                 </div>
                 <div class="barItem">
                     <div class="itemContainer">
                         <div class="priceName sntw2">SNTW2</div>
-                        <div class="priceValue">
+                        <div class="priceValue" hidden="true">
                             <label class="bid">BID:<span id="sntwBid2"></span></label>
                             <label class="ask">ASK:<span id="sntwAsk2"></span></label>
+                        </div>
+                        <div class="loaderWapper valueLoader">
+                            <div class="loader"></div>
                         </div>
                     </div>
                 </div>
                 <div class="barItem">
                     <div class="itemContainer">
                         <div class="priceName sntw3">SNTW3</div>
-                        <div class="priceValue">
+                        <div class="priceValue" hidden="true">
                             <label class="bid">BID:<span id="sntwBid3"></span></label>
                             <label class="ask">ASK:<span id="sntwAsk3"></span></label>
+                        </div>
+                        <div class="loaderWapper valueLoader">
+                            <div class="loader"></div>
                         </div>
                     </div>
                 </div>
@@ -127,7 +136,9 @@
                                         <label class="balanceItemName1">Total Balance</label>
                                         <label class="balanceItemName2 twd">TWD</label>
                                     </div>
-                                    <div id="balanceTwd" class="balanceItemValue">0</div>
+                                    <div id="balanceTwd" class="balanceItemValue">
+                                        <div class="loader"></div>
+                                    </div>
                                 </div>
                             </td>
                             <td>
@@ -136,7 +147,9 @@
                                         <label class="balanceItemName1">Solar Token Taiwan</label>
                                         <label class="balanceItemName2 sttw">STTW</label>
                                     </div>
-                                    <div id="balanceSttw" class="balanceItemValue">0</div>
+                                    <div id="balanceSttw" class="balanceItemValue">
+                                        <div class="loader"></div>
+                                    </div>
                                 </div>
                             </td>
                         </tr>
@@ -147,7 +160,9 @@
                                         <label class="balanceItemName1">Solar Note Taiwan 1</label>
                                         <label class="balanceItemName2 sntw1">SNTW1</label>
                                     </div>
-                                    <div id="balanceSntw1" class="balanceItemValue">0</div>
+                                    <div id="balanceSntw1" class="balanceItemValue">
+                                        <div class="loader"></div>
+                                    </div>
                                 </div>
                             </td>
                             <td>
@@ -156,7 +171,9 @@
                                         <label class="balanceItemName1">Solar Note Taiwan 2</label>
                                         <label class="balanceItemName2 sntw2">SNTW2</label>
                                     </div>
-                                    <div id="balanceSntw2" class="balanceItemValue">0</div>
+                                    <div id="balanceSntw2" class="balanceItemValue">
+                                        <div class="loader"></div>
+                                    </div>
                                 </div>
                             </td>
                             <td>
@@ -165,7 +182,9 @@
                                         <label class="balanceItemName1">Solar Note Taiwan 3</label>
                                         <label class="balanceItemName2 sntw3">SNTW3</label>
                                     </div>
-                                    <div id="balanceSntw3" class="balanceItemValue">0</div>
+                                    <div id="balanceSntw3" class="balanceItemValue">
+                                        <div class="loader"></div>
+                                    </div>
                                 </div>
                             </td>
                         </tr>
@@ -181,6 +200,9 @@
                                 <th>Amount(TWD)</th>
                             </tr>
                         </table>
+                        <div id="historyLoader" class="loaderWapper">
+                            <div class="loader"></div>
+                        </div>
                     </div>
                 </div>
                 <div id="wallet">
@@ -246,7 +268,7 @@
                                 <input id="sntwAmountPay" class="tradeInput" type="number" value=0></input>
                             </div>
                             <div class="tradeLabel">Estimated Amount</div>
-                            <div class="tradeBlock">                            
+                            <div class="tradeBlock">
                                 <div class="tradeUnit">STTW</div>
                                 <div id="sttwAmountGet" class="tradeInput">0</div>
                             </div>

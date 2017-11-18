@@ -126,7 +126,7 @@ function loadUserWallet(username, privateKey) {
         });
 
         var twd = formatValue(calTotalBalance());
-    	$("#balanceTwd").text(isNaN(twd) ? "loading..." : twd);
+        $("#balanceTwd").html(isNaN(twd) ? "<div class='loader'></div>" : twd);
 
     }, 3000);
 
@@ -148,6 +148,7 @@ function calTotalBalance() {
 
 function refreshHistory(start) {
     $(".historyTable tr:gt(0)").remove();
+    $("#historyLoader").show();
     $.ajax({
         url: "/getTrade",
         type: "post",
@@ -162,6 +163,7 @@ function refreshHistory(start) {
 
             var data = [];
 
+            $("#historyLoader").hide();
             for (var i = 0; i < trades.length; i++) {
                 var t = trades[i];
                 if (t.get == userWallet.address || t.give == userWallet.address) {
@@ -407,6 +409,9 @@ function refreshOrder() {
                         });
                 })(e);
             }
+
+            $(".priceValue").show();
+            $(".valueLoader").hide();
 
             $("#sntwBid1").text(sntwBid1);
             $("#sntwBid2").text(sntwBid2);
