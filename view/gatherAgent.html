@@ -37,7 +37,7 @@
         console.log(logger);
         logger.inQuery = true;
         solaExchange.getPastEvents('Trade', {
-                fromBlock: 0,//logger.lastBlock + 1,
+                fromBlock: logger.lastBlock + 1,
                 toBlock: 'latest'
             })
             .then(function(trades) {

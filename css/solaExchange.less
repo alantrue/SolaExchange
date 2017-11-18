@@ -117,6 +117,7 @@ footer {
     display: flex;
     flex-direction: column;
     background: #1b262d;
+    position: relative;
 }
 
 @titleMargin: 30px;
@@ -131,6 +132,7 @@ footer {
 .content {
     flex: 1;
     color: #A4A9AC;
+    position: relative;
 }
 
 .headerRight,
@@ -193,7 +195,8 @@ footer {
     margin: 0.2em;
 }
 
-#orderBuy, #orderSell {
+#orderBuy,
+#orderSell {
     font-weight: bold;
 }
 
@@ -360,4 +363,25 @@ footer {
 .dialogHr {
     margin: 0.5em 0 0.5em 0;
     border-color: #A4A9AC;
+}
+
+.loader {
+    border: 0.3em solid #f3f3f3;
+    border-top: 0.3em solid grey;
+    border-radius: 50%;
+    width: 1.5em;
+    height: 1.5em;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% {
+        transform: translate(-50%, -50%) rotate(0deg);
+    }
+    100% {
+        transform: translate(-50%, -50%) rotate(360deg);
+    }
 }

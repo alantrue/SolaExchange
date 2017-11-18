@@ -25,7 +25,6 @@ var sntw1 = new web3.eth.Contract(sntwABI, sntwAddress1);
 var sntw2 = new web3.eth.Contract(sntwABI, sntwAddress2);
 var sntw3 = new web3.eth.Contract(sntwABI, sntwAddress3);
 var solaExchange = new web3.eth.Contract(solaExchangeABI, solaExchangeAddress);
-var selectSntwAddress;
 
 $(function() {
     bindAll();
@@ -50,13 +49,12 @@ $(function() {
                     refreshTrade();
                 } else {
                     refreshExpires();
-                    if (selectSntwAddress) {
-                        refreshOrder(selectSntwAddress);
-                    }
                 }
             });
 
             web3.eth.getBalance(account).then(function(r) {
+                $("#walletLoader").hide();
+                $("#wallets").show();
                 $("#walletETH").text(formatWeiValue(r));
             });
 
@@ -77,6 +75,8 @@ $(function() {
             });
 
             solaExchange.methods.balanceOf(sttwAddress, account).call().then(function(r) {
+                $("#balanceLoader").hide();
+                $("#balances").show();
                 $("#balanceSTTW").text(formatWeiValue(r));
             });
 
@@ -124,6 +124,7 @@ function getTokenName(address) {
 }
 
 function refreshPairs() {
+    $("#pairsLoader").hide();
     $("#pairs .row").remove();
 
     $.getJSON("https://sola-api.herokuapp.com/api/v1/projects", function(allProject) {
@@ -195,6 +196,7 @@ function refreshTrade() {
             toBlock: 'latest'
         })
         .then(function(trades) {
+            $("#historyLoader").hide();
             $("#myTrades .row").remove();
 
             for (var i = 0; i < trades.length; i++) {
@@ -221,7 +223,16 @@ function refreshTrade() {
         });
 }
 
-function refreshOrder(selectedSntw) {
+function refreshOrder(selectedSntw, loading) {
+    if (loading) {
+        $("#orderBookBuy .row").remove();
+        $("#orderBookBuyLoader").show();
+        $("#orderBookSell .row").remove();
+        $("#orderBookSellLoader").show();
+        $("#myOrders .row").remove();
+        $("#myOrderLoader").show();
+    }
+
     solaExchange.getPastEvents('Order', {
             //filter: { myIndexedParam: [20, 23], myOtherIndexedParam: '0x123456789...' }, // Using an array means OR: e.g. 20 or 23
             fromBlock: 0,
@@ -281,6 +292,7 @@ function refreshOrder(selectedSntw) {
                                 var sortBuys = sortForOrderBook(orderBook.orders, "BUY");
                                 var sortSells = sortForOrderBook(orderBook.orders, "SELL");
 
+                                $("#orderBookBuyLoader").hide();
                                 $("#orderBookBuy .row").remove();
                                 for (var s in sortBuys) {
                                     var o = sortBuys[s][0];
@@ -288,6 +300,7 @@ function refreshOrder(selectedSntw) {
                                     $("#orderBookBuy").append(order);
                                 }
 
+                                $("#orderBookSellLoader").hide();
                                 $("#orderBookSell .row").remove();
                                 for (var s in sortSells) {
                                     var o = sortSells[s][0];
@@ -297,6 +310,7 @@ function refreshOrder(selectedSntw) {
                             }
 
                             if (myOrders.count == 0) {
+                                $("#myOrderLoader").hide();
                                 $("#myOrders .row").remove();
                                 for (var id in myOrders.orders) {
                                     var o = myOrders.orders[id];
@@ -601,8 +615,7 @@ function bindAll() {
 
         $("#orderToken").text(pair);
 
-        selectSntwAddress = sntwAddress;
-        refreshOrder(sntwAddress);
+        refreshOrder(sntwAddress, true);
         refreshPriceChart(sntwAddress, startBlock);
 
         var id = $(this).data("id");
@@ -610,6 +623,7 @@ function bindAll() {
             return a.id == id;
         });
 
+        $("#mapLoader").hide();
         var map = new GMaps({
             div: '#map',
             lat: p.projects[0].coord.lat,
@@ -660,6 +674,7 @@ function bindAll() {
             datas.push(item.value);
         });
 
+        $("#powerLoader").hide();
         var ctx = $("#chart-area");
         ctx.empty;
 
@@ -803,7 +818,9 @@ function bindAll() {
         solaExchange.methods.trade(rv.tokenGet, rv.amountGet, rv.tokenGive, rv.amountGive, rv.expires, rv.nonce, rv.user, v, r, s, amountGet).send({ from: account })
             .then(function(r) {
                 console.log(r);
-                refreshOrder(sntwAddress);
+                setTimeout(function() {
+                    refreshOrder(sntwAddress);
+                }, 5000);
                 refreshTrade();
                 refreshPriceChart(sntwAddress, startBlock);
                 showMessage("The transaction is successful.");
@@ -848,7 +865,9 @@ function bindAll() {
         solaExchange.methods.order(sntwAddress, web3.utils.toWei(get, 'ether'), sttwAddress, web3.utils.toWei(give, 'ether'), expires, nonce).send({ from: account })
             .then(function(r) {
                 console.log(r);
-                refreshOrder(sntwAddress);
+                setTimeout(function() {
+                    refreshOrder(sntwAddress);
+                }, 5000);
                 showMessage("Create a buy order successfully.");
             });
     });
@@ -875,7 +894,9 @@ function bindAll() {
         solaExchange.methods.order(sttwAddress, web3.utils.toWei(get, 'ether'), sntwAddress, web3.utils.toWei(give, 'ether'), expires, nonce).send({ from: account })
             .then(function(r) {
                 console.log(r);
-                refreshOrder(sntwAddress);
+                setTimeout(function() {
+                    refreshOrder(sntwAddress);
+                }, 5000);
                 showMessage("Create a sell order successfully.");
             });
     });

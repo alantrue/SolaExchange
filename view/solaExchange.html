@@ -46,7 +46,8 @@
         <div class="mainLeft">
             <div class="mainLeft1 block">
                 <label class="title">Wallet</label>
-                <div class="content">
+                <div id="walletLoader" class="loader"></div>
+                <div id="wallets" class="content" hidden="true">
                     <div class="wallet">
                         <span>ETH</span>
                         <span id="walletETH">0</span>
@@ -83,7 +84,8 @@
             </div>
             <div class="mainLeft2 block">
                 <label class="title">BALANCES</label>
-                <div class="content">
+                <div id="balanceLoader" class="loader"></div>
+                <div id="balances" class="content" hidden="true">
                     <div class="balance">
                         <span>STTW</span>
                         <span>
@@ -160,6 +162,7 @@
             <div class="mainLeft4 block">
                 <label class="title">MY TRADE HISTORY</label>
                 <div class="content scrollbar">
+                    <div id="historyLoader" class="loader"></div>
                     <div id="myTrades" class="table">
                         <div class="rowHead">
                             <div class="cell">Order</div>
@@ -177,6 +180,7 @@
                     <div class="mainRight1Left1 block">
                         <label class="title">PAIRS</label>
                         <div class="content scrollbar">
+                            <div id="pairsLoader" class="loader"></div>
                             <div id="pairs" class="table">
                                 <div class="rowHead">
                                     <div class="cell">Pair</div>
@@ -190,12 +194,14 @@
                     </div>
                     <div class="mainRight1Left2 block">
                         <label class="title">POWER GENERATION</label>
+                        <div id="powerLoader" class="loader"></div>
                         <canvas id="chart-area" class="zone"></canvas>
                     </div>
                 </div>
                 <div class="mainRight1Right block">
                     <label class="title">LOCATION</label>
                     <div class="content">
+                        <div id="mapLoader" class="loader"></div>
                         <div id="map" class="map">
                         </div>
                     </div>
@@ -205,6 +211,7 @@
                 <div class="mainRight2Right block">
                     <label class="title">OPEN ORDERS</label>
                     <div class="content scrollbar">
+                        <div id="myOrderLoader" class="loader"></div>
                         <div id="myOrders" class="table">
                             <div class="rowHead">
                                 <div class="cell">Order</div>
@@ -221,6 +228,7 @@
                     <label class="title">ORDER BOOK</label>
                     <div class="content orderBook">
                         <div class="orderBookBuy scrollbar scrollbarLeft">
+                            <div id="orderBookBuyLoader" class="loader"></div>
                             <div id="orderBookBuy" class="table">
                                 <div class="rowHead">
                                     <div class="cell">Price</div>
@@ -230,6 +238,7 @@
                             </div>
                         </div>
                         <div class="orderBookSell scrollbar">
+                            <div id="orderBookSellLoader" class="loader"></div>
                             <div id="orderBookSell" class="table">
                                 <div class="rowHead">
                                     <div class="cell">Price</div>
@@ -244,6 +253,7 @@
             <div class="mainRight3 block">
                 <label class="title">PRICE CHART</label>
                 <div class="content chart">
+                    <div id="priceChartLoader" class="loader"></div>
                     <div id="container" style="width:100%"></div>
                 </div>
             </div>
