@@ -425,6 +425,16 @@
                     $("#ethInWallet").text(sprintf("ETH: %s", web3.utils.fromWei(r, 'ether')));
                 });
 
+                sttwStore.methods.calculateBuyTokenUsingEth(web3.utils.toWei("1")).call().then(function(r) {
+                    $("#ethToSttw").text(sprintf("ETH to STTW: %s", web3.utils.fromWei(r, 'ether')));
+                    $("#ethToSttw").data("value", web3.utils.fromWei(r, 'ether'));
+                });
+
+                sttwStore.methods.calculateSellTokenForEth(web3.utils.toWei("1")).call().then(function(r) {
+                    $("#sttwToEth").text(sprintf("STTW to ETH: %s", web3.utils.fromWei(r, 'ether')));
+                    $("#sttwToEth").data("value", web3.utils.fromWei(r, 'ether'));
+                });
+
                 sttw.methods.balanceOf(account).call().then(function(r) {
                     $("#sttwInWallet").text(sprintf("STTW: %s", web3.utils.fromWei(r, 'ether')));
                 });
@@ -637,6 +647,33 @@
             }
             return false;
         }
+
+        $("#sttwTokenBuy").bind('keyup mouseup', function() {
+            var eth = $(this).val() / parseFloat($("#ethToSttw").data("value"));
+            $("#ethTokenBuy").val(eth);
+        });
+
+        $("#btnBuySttwUsingEth").click(function() {
+            var eth = $("#sttwTokenBuy").val() / parseFloat($("#ethToSttw").data("value"));
+            sttwStore.methods.buyTokenUsingEth().send({ from: account, value: web3.utils.toWei(eth, 'ether') })
+                .then(console.log);
+        });
+
+        $("#sttwTokenSell").bind('keyup mouseup', function() {
+            var eth = $(this).val() * parseFloat($("#sttwToEth").data("value"));
+            $("#ethTokenSell").val(eth);
+        });
+
+        $("#btnSellSttwForEth").click(function() {
+            sttwStore.methods.sellTokenForEth(web3.utils.toWei($("#sttwTokenSell").val(), 'ether')).send({ from: account })
+                .then(console.log);
+        });
+
+        $("#btnApproveSellSttw").click(function() {
+            var v = $("#sttwTokenSell").val();
+            sttw.methods.approve(sttwStoreAddress, web3.utils.toWei(v, 'ether')).send({ from: account })
+                .then(console.log);
+        });
 
         $("#btnApprove").click(function() {
             var token = $("#token").val();
@@ -1420,6 +1457,8 @@
                         <td style="padding-right: 30px;">
                             <label>In Wallet:</label>
                             <div id="ethInWallet"></div>
+                            <div id="ethToSttw"> </div>
+                            <div id="sttwToEth"> </div>
                             <div id="sttwInWallet"></div>
                             <div id="sntwInWallet1"></div>
                             <div id="sntwInWallet2"></div>
@@ -1441,6 +1480,17 @@
                     </tr>
                 </table>
                 </div>
+                <hr/>
+                <label>STTW:</label>
+                <input id="sttwTokenBuy" type="number" value=0></input>
+                <input id="ethTokenBuy" type="number" value=0 disabled="true"></input>
+                <button type="button" id="btnBuySttwUsingEth">Buy STTW using ETH</button>
+                <hr/>
+                <label>STTW:</label>
+                <input id="sttwTokenSell" type="number" value=0></input>
+                <input id="ethTokenSell" type="number" value=0 disabled="true"></input>
+                <button type="button" id="btnApproveSellSttw">Approve Sell STTW</button>
+                <button type="button" id="btnSellSttwForEth">Sell STTW for ETH</button>
                 <hr/>
                 <select id="token">
                     <option value="0">STTW</option>
