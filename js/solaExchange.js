@@ -14,6 +14,12 @@ web3.eth.getAccounts().then(function(r) {
     }
 });
 
+web3.eth.net.getNetworkType((err, netId) => {
+    if (netId != "kovan") {
+        alert("Please change network to Kovan Test Net");
+    }
+});
+
 var startBlock = 1510129795;
 var feeRate = 0.005;
 var account;
