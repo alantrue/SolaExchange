@@ -6,8 +6,12 @@ if (typeof web3 !== 'undefined') {
 }
 
 web3.eth.getAccounts().then(function(r) {
-    account = r[0];
-    $("#userAccount").text(account);
+    if (r[0]) {
+        account = r[0];
+        $("#userAccount").text(account);
+    } else {
+        alert("Please sign in your ether wallet");
+    }
 });
 
 var startBlock = 1510129795;
@@ -28,6 +32,7 @@ var solaExchange = new web3.eth.Contract(solaExchangeABI, solaExchangeAddress);
 
 $(function() {
     bindAll();
+    refreshPairs();
     setInterval(function() {
         web3.eth.getAccounts().then(function(r) {
             if (account == r[0]) {
@@ -45,7 +50,6 @@ $(function() {
                 $("#currentBlock").text(currentBlock);
                 if (!dataInitialized) {
                     dataInitialized = true;
-                    refreshPairs();
                     refreshTrade();
                 } else {
                     refreshExpires();
