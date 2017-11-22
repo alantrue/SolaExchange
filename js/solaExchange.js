@@ -35,6 +35,7 @@ var sntw1 = new web3.eth.Contract(sntwABI, sntwAddress1);
 var sntw2 = new web3.eth.Contract(sntwABI, sntwAddress2);
 var sntw3 = new web3.eth.Contract(sntwABI, sntwAddress3);
 var solaExchange = new web3.eth.Contract(solaExchangeABI, solaExchangeAddress);
+var sttwStore = new web3.eth.Contract(sttwStoreABI, sttwStoreAddress);
 
 $(function() {
     bindAll();
@@ -66,6 +67,16 @@ $(function() {
                 $("#walletLoader").hide();
                 $("#wallets").show();
                 $("#walletETH").text(formatWeiValue(r));
+            });
+
+            sttwStore.methods.calculateBuyTokenUsingEth(web3.utils.toWei("1")).call().then(function(r) {
+                $("#ethToSttw").text(sprintf("ETH to STTW: %s", web3.utils.fromWei(r, 'ether')));
+                $("#ethToSttw").data("value", web3.utils.fromWei(r, 'ether'));
+            });
+
+            sttwStore.methods.calculateSellTokenForEth(web3.utils.toWei("1")).call().then(function(r) {
+                $("#sttwToEth").text(sprintf("STTW to ETH: %s", web3.utils.fromWei(r, 'ether')));
+                $("#sttwToEth").data("value", web3.utils.fromWei(r, 'ether'));
             });
 
             sttw.methods.balanceOf(account).call().then(function(r) {
@@ -540,6 +551,14 @@ function openTradeDialog(logId) {
     $("#tradeMask").show();
 }
 
+function openBuySttwDialog() {
+    $("#buySttwMask").show();
+}
+
+function openSellSttwDialog() {
+    $("#sellSttwMask").show();
+}
+
 function calcOrder() {
     var sttw = $("#orderPrice").val() * $("#orderAmount").val();
     $("#orderSubtotal").text(sttw);
@@ -558,20 +577,32 @@ function showMessage(msg) {
 }
 
 function bindAll() {
+    $("#buySTTW").click(function() {
+        openBuySttwDialog();
+    });
+
+    $("#approveSTTWToEth").click(function() {
+        openBalanceDialog(sttwAddress, "Approve to sell for ETH");
+    });
+
+    $("#sellSTTW").click(function() {
+        openSellSttwDialog();
+    });
+
     $("#approveSTTW").click(function() {
-        openBalanceDialog(sttwAddress, "Approve");
+        openBalanceDialog(sttwAddress, "Approve to desposit");
     });
 
     $("#approveSNTW1").click(function() {
-        openBalanceDialog(sntwAddress1, "Approve");
+        openBalanceDialog(sntwAddress1, "Approve to desposit");
     });
 
     $("#approveSNTW2").click(function() {
-        openBalanceDialog(sntwAddress2, "Approve");
+        openBalanceDialog(sntwAddress2, "Approve to desposit");
     });
 
     $("#approveSNTW3").click(function() {
-        openBalanceDialog(sntwAddress3, "Approve");
+        openBalanceDialog(sntwAddress3, "Approve to desposit");
     });
 
     $("#depositSTTW").click(function() {
@@ -781,10 +812,10 @@ function bindAll() {
 
         var operation = $(this).text();
         switch (operation) {
-            case "Approve":
+            case "Approve to desposit":
                 tokenContract.methods.approve(solaExchangeAddress, web3.utils.toWei(v, 'ether')).send({ from: account }).then(function(result) {
                     tokenContract.methods.allowance(account, solaExchangeAddress).call().then(function(r) {
-                        showMessage(sprintf("Approve successfully. You can deposit %s %s.", web3.utils.fromWei(r, 'ether'), getTokenName(tokenAddress)));
+                        showMessage(sprintf("Approve to desposit successfully. You can deposit %s %s.", web3.utils.fromWei(r, 'ether'), getTokenName(tokenAddress)));
                     });
                     console.log(result);
                 });
@@ -801,6 +832,11 @@ function bindAll() {
                     console.log(result);
                 });
                 break;
+            case "Approve to sell for ETH":
+                sttw.methods.approve(sttwStoreAddress, web3.utils.toWei(v, 'ether')).send({ from: account }).then(function(result) {
+                    showMessage("Approve to sell for ETH successful.");
+                    console.log(result);
+                });
         }
 
         $("#balanceMask").hide();
@@ -918,5 +954,34 @@ function bindAll() {
 
     $(".cancelBtn").click(function() {
         $(this).parent().parent().hide();
-    })
+    });
+
+    $("#buySttwDialogAmount").bind('keyup mouseup', function() {
+        var eth = $(this).val() / parseFloat($("#ethToSttw").data("value"));
+        $("#buySttwDialogGive").val(eth);
+    });
+
+    $("#buySttwConfirm").click(function() {
+        var eth = $("#buySttwDialogAmount").val() / parseFloat($("#ethToSttw").data("value"));
+        sttwStore.methods.buyTokenUsingEth().send({ from: account, value: web3.utils.toWei(eth, 'ether') }).then(function(r) {
+            console.log(r);
+            showMessage("Buy STTW successfully.");
+        });
+
+        $("#buySttwMask").hide();
+    });
+
+    $("#sellSttwDialogAmount").bind('keyup mouseup', function() {
+            var eth = $(this).val() * parseFloat($("#sttwToEth").data("value"));
+            $("#sellSttwDialogGet").val(eth);
+        });
+
+    $("#sellSttwConfirm").click(function() {
+        sttwStore.methods.sellTokenForEth(web3.utils.toWei($("#sellSttwDialogAmount").val(), 'ether')).send({ from: account }).then(function(r) {
+            console.log(r);
+            showMessage("Sell STTW successfully.");
+        });
+
+        $("#sellSttwMask").hide();
+    });
 }

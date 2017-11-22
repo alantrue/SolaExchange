@@ -34,6 +34,8 @@
     <header>
         <div class="headerLeft">
             <img class="logo" src="img/logo.png">
+            <label id="ethToSttw"></label>
+            <label id="sttwToEth"></label>
         </div>
         <div class="headerRight">
             <i class="fa fa-clock-o icon" aria-hidden="true"></i>
@@ -50,34 +52,39 @@
                 <div id="wallets" class="content" hidden="true">
                     <div class="wallet">
                         <span>ETH</span>
-                        <span id="walletETH">0</span>
+                        <span>
+                            <span id="walletETH">0</span>
+                        <i id="buySTTW" title="buy STTW using ETH" class="fa fa-shopping-cart clickable" aria-hidden="true"></i>
+                        </span>
                     </div>
                     <div class="wallet">
                         <span>STTW</span>
                         <span>
                             <span id="walletSTTW">0</span>
-                        <i id="approveSTTW" title="Approve" class="fa fa-handshake-o clickable" aria-hidden="true"></i>
+                        <i id="approveSTTWToEth" title="Approve to sell for ETH" class="fa fa-arrow-circle-up clickable" aria-hidden="true"></i>
+                        <i id="sellSTTW" title="sell for ETH" class="fa fa-shopping-bag clickable" aria-hidden="true"></i>
+                        <i id="approveSTTW" title="Approve to deposit" class="fa fa-arrow-circle-down clickable" aria-hidden="true"></i>
                         </span>
                     </div>
                     <div class="wallet">
                         <span>SNTW1</span>
                         <span>
                             <span id="walletSNTW1">0</span>
-                        <i id="approveSNTW1" title="Approve" class="fa fa-handshake-o clickable" aria-hidden="true"></i>
+                        <i id="approveSNTW1" title="Approve to deposit" class="fa fa-arrow-circle-down clickable" aria-hidden="true"></i>
                         </span>
                     </div>
                     <div class="wallet">
                         <span>SNTW2</span>
                         <span>
                             <span id="walletSNTW2">0</span>
-                        <i id="approveSNTW2" title="Approve" class="fa fa-handshake-o clickable" aria-hidden="true"></i>
+                        <i id="approveSNTW2" title="Approve to deposit" class="fa fa-arrow-circle-down clickable" aria-hidden="true"></i>
                         </span>
                     </div>
                     <div class="wallet">
                         <span>SNTW3</span>
                         <span>
                             <span id="walletSNTW3">0</span>
-                        <i id="approveSNTW3" title="Approve" class="fa fa-handshake-o clickable" aria-hidden="true"></i>
+                        <i id="approveSNTW3" title="Approve to deposit" class="fa fa-arrow-circle-down clickable" aria-hidden="true"></i>
                         </span>
                     </div>
                 </div>
@@ -303,6 +310,40 @@
             <div id="messageContent"></div>
             <hr class="dialogHr" />
             <button id="messageConfirm" class="dialogBtn" type="button">ok</button>
+        </div>
+    </div>
+    <div id="buySttwMask" class="dialogMask">
+        <div id="buySttwDialog" class="dialog">
+            <label>Buy STTW</label>
+            <hr class="dialogHr" />
+            <div>STTW</div>
+            <input id="buySttwDialogAmount" type="number"></input>
+            <br/>
+            <br/>
+            <div>give ETH</div>
+            <input id="buySttwDialogGive" type="number" disabled></input>
+            <br/>
+            <br/>
+            <hr class="dialogHr" />
+            <button class="dialogBtn cancelBtn" type="button">cancel</button>
+            <button id="buySttwConfirm" class="dialogBtn" type="button">buy</button>
+        </div>
+    </div>
+    <div id="sellSttwMask" class="dialogMask">
+        <div id="sellSttwDialog" class="dialog">
+            <label>Sell STTW</label>
+            <hr class="dialogHr" />
+            <div>STTW</div>
+            <input id="sellSttwDialogAmount" type="number"></input>
+            <br/>
+            <br/>
+            <div>get ETH</div>
+            <input id="sellSttwDialogGet" type="number" disabled></input>
+            <br/>
+            <br/>
+            <hr class="dialogHr" />
+            <button class="dialogBtn cancelBtn" type="button">cancel</button>
+            <button id="sellSttwConfirm" class="dialogBtn" type="button">sell</button>
         </div>
     </div>
 </body>
